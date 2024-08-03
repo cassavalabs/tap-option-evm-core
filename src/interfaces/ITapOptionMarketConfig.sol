@@ -40,7 +40,13 @@ interface ITapOptionMarketConfig {
     /**
      * @notice Emitted when a market is created
      */
-    event CreateMarket(MarketId indexed id, address creator, uint16 reward, uint32 minInterval, uint32 maxInterval);
+    event CreateMarket(
+        MarketId indexed id,
+        address creator,
+        uint16 reward,
+        uint32 minInterval,
+        uint32 maxInterval
+    );
 
     /**
      * @notice Emitted when the market time config is updated
@@ -58,7 +64,11 @@ interface ITapOptionMarketConfig {
     event UnPause(MarketId indexed id);
 
     /// @notice Emitted when native/local tokens are recovered from the contract
-    event RecoverToken(address indexed currency, address indexed receipient, uint256 amount);
+    event RecoverToken(
+        address indexed currency,
+        address indexed receipient,
+        uint256 amount
+    );
 
     /**
      * @dev Allow anyone to start a tournament
@@ -118,7 +128,12 @@ interface ITapOptionMarketConfig {
      * @param minInterval the minimum expiry in seconds
      * @param maxInterval the maximum expiry in seconds
      */
-    function createMarket(MarketId id, uint16 reward, uint32 minInterval, uint32 maxInterval) external;
+    function createMarket(
+        MarketId id,
+        uint16 reward,
+        uint32 minInterval,
+        uint32 maxInterval
+    ) external;
 
     /**
      * @dev Allow re-configuring market option expiry after creation

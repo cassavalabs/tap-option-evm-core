@@ -7,11 +7,16 @@ interface IProtocolFee {
      * @dev Emitted when the protocol manager collects accrued fees
      *
      * @param collector The transaction sender
-     * @param receipient The destination address
+     * @param recipient The destination address
      * @param token The token address
      * @param amount Amount collected
      */
-    event CollectFee(address indexed collector, address indexed receipient, address indexed token, uint256 amount);
+    event CollectFee(
+        address indexed collector,
+        address indexed recipient,
+        address indexed token,
+        uint256 amount
+    );
 
     /**
      * @dev Emitted when a new protocol fee is set for market with id of `id`

@@ -100,7 +100,12 @@ interface ITapOptionMarket {
      * @param account the position owner address
      * @param priceUpdate the pyth network price update data
      */
-    function settle(MarketId id, uint64 tournamentId, address account, bytes calldata priceUpdate) external payable;
+    function settle(
+        MarketId id,
+        uint64 tournamentId,
+        address account,
+        bytes calldata priceUpdate
+    ) external payable;
 
     /**
      * @dev Allow anyone to signup as entrants to tournament
