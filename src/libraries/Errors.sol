@@ -83,4 +83,7 @@ library Errors {
 
     /// @notice Revert if invalid time config is provided
     error InvalidTimeConfig();
+
+    // There is no price feed found within the given range or it does not exists.
+    error PriceFeedNotFoundWithinRange();
 }
