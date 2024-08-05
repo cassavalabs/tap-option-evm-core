@@ -51,9 +51,7 @@ interface IPyth {
      * @param updateData Array of price update data.
      * @return feeAmount The required fee in Wei.
      */
-    function getUpdateFee(
-        bytes[] calldata updateData
-    ) external view returns (uint256 feeAmount);
+    function getUpdateFee(bytes[] calldata updateData) external view returns (uint256 feeAmount);
 
     /**
      * @notice Returns the price and confidence interval.
@@ -70,10 +68,7 @@ interface IPyth {
      * recently.
      * @return price - please read the documentation of PythStructs.Price to understand how to use this safely.
      */
-    function getPriceNoOlderThan(
-        bytes32 id,
-        uint256 age
-    ) external view returns (Price memory price);
+    function getPriceNoOlderThan(bytes32 id, uint256 age) external view returns (Price memory price);
 
     /// @notice Parse `updateData` and return price feeds of the given `priceIds` if they are all published
     /// within `minPublishTime` and `maxPublishTime`.

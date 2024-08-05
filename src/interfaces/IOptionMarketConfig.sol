@@ -2,9 +2,10 @@
 
 pragma solidity ^0.8.23;
 
-import {MarketId} from "./ITapOptionMarket.sol";
+import {Market} from "../libraries/Market.sol";
+import {MarketId} from "../libraries/MarketId.sol";
 
-interface ITapOptionMarketConfig {
+interface IOptionMarketConfig {
     /**
      * @notice Emitted whenever a new tournament is created
      */
@@ -25,7 +26,7 @@ interface ITapOptionMarketConfig {
     /**
      * @notice Emitted whenever a tournament is finalized
      */
-    event SettleTournament(uint256 indexed tournamentId, bytes32 merkleRoot);
+    event SettleTournament(uint256 indexed tournamentId, address indexed operator, bytes32 merkleRoot);
 
     /**
      * @notice Emitted whenever a tournament expiration is extended
@@ -40,13 +41,7 @@ interface ITapOptionMarketConfig {
     /**
      * @notice Emitted when a market is created
      */
-    event CreateMarket(
-        MarketId indexed id,
-        address creator,
-        uint16 reward,
-        uint32 minInterval,
-        uint32 maxInterval
-    );
+    event CreateMarket(MarketId indexed id, address creator, uint16 reward, uint32 minInterval, uint32 maxInterval);
 
     /**
      * @notice Emitted when the market time config is updated
@@ -64,36 +59,14 @@ interface ITapOptionMarketConfig {
     event UnPause(MarketId indexed id);
 
     /// @notice Emitted when native/local tokens are recovered from the contract
-    event RecoverToken(
-        address indexed currency,
-        address indexed receipient,
-        uint256 amount
-    );
+    event RecoverToken(address indexed currency, address indexed recipient, uint256 amount);
 
     /**
      * @dev Allow anyone to start a tournament
      *
-     * @param currency address of token used
-     * @param prizePool the amount to be disbursed to winners
-     * @param entryFee the amount required to signup
-     * @param cost the amount it will cost entrants to refill their balance
-     * @param winners number of possible winners
-     * @param startTime unix timestamp when tournament will begin
-     * @param endTime unix timestamp when tournament will end
-     * @param maxRefill the maximum number of time a user can refill balance
-     * @param title the title of tournament
+     * @param params required object to create a tournament
      */
-    function startTournament(
-        address currency,
-        uint256 prizePool,
-        uint256 entryFee,
-        uint256 cost,
-        uint64 winners,
-        uint64 startTime,
-        uint64 endTime,
-        uint256 maxRefill,
-        string memory title
-    ) external payable;
+    function startTournament(Market.StartTournamentParam memory params) external payable;
 
     /**
      * @dev Allow operators to finalize a tournament
@@ -109,7 +82,6 @@ interface ITapOptionMarketConfig {
      * @param tournamentId tournament id
      * @param endTime the new closing time in seconds
      */
-
     function extendTournament(uint64 tournamentId, uint64 endTime) external;
 
     /**
@@ -128,12 +100,7 @@ interface ITapOptionMarketConfig {
      * @param minInterval the minimum expiry in seconds
      * @param maxInterval the maximum expiry in seconds
      */
-    function createMarket(
-        MarketId id,
-        uint16 reward,
-        uint32 minInterval,
-        uint32 maxInterval
-    ) external;
+    function createMarket(MarketId id, uint16 reward, uint32 minInterval, uint32 maxInterval) external;
 
     /**
      * @dev Allow re-configuring market option expiry after creation

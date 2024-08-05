@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.23;
 
-type MarketId is bytes32;
+import {MarketId} from "../libraries/MarketId.sol";
 
-interface ITapOptionMarket {
+interface IOptionMarket {
     /**
      * @dev Emitted when a user takes a bearish position on a market
      */
@@ -67,13 +67,9 @@ interface ITapOptionMarket {
      * @param expiry the option expiry in seconds after openning
      * @param priceUpdate the pyth network price update data
      */
-    function bearish(
-        MarketId id,
-        uint64 tournamentId,
-        uint64 investment,
-        uint32 expiry,
-        bytes calldata priceUpdate
-    ) external payable;
+    function bearish(MarketId id, uint64 tournamentId, uint64 investment, uint32 expiry, bytes calldata priceUpdate)
+        external
+        payable;
 
     /**
      * @dev Called to open a bullish position on a market
@@ -84,13 +80,9 @@ interface ITapOptionMarket {
      * @param expiry the option expiry in seconds after openning
      * @param priceUpdate the pyth network price update data
      */
-    function bullish(
-        MarketId id,
-        uint64 tournamentId,
-        uint64 investment,
-        uint32 expiry,
-        bytes calldata priceUpdate
-    ) external payable;
+    function bullish(MarketId id, uint64 tournamentId, uint64 investment, uint32 expiry, bytes calldata priceUpdate)
+        external
+        payable;
 
     /**
      * @dev Allow anyone to excercise the option at expiration
@@ -100,12 +92,7 @@ interface ITapOptionMarket {
      * @param account the position owner address
      * @param priceUpdate the pyth network price update data
      */
-    function settle(
-        MarketId id,
-        uint64 tournamentId,
-        address account,
-        bytes calldata priceUpdate
-    ) external payable;
+    function settle(MarketId id, uint64 tournamentId, address account, bytes calldata priceUpdate) external payable;
 
     /**
      * @dev Allow anyone to signup as entrants to tournament
@@ -131,11 +118,6 @@ interface ITapOptionMarket {
      * @param account the account addresss reward is accrued to
      * @param amount the amount to claim
      */
-    function claim(
-        uint256 tournamentId,
-        bytes32[] memory proof,
-        uint256 index,
-        address account,
-        uint256 amount
-    ) external;
+    function claim(uint256 tournamentId, bytes32[] memory proof, uint256 index, address account, uint256 amount)
+        external;
 }

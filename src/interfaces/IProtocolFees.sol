@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.23;
 
-interface IProtocolFee {
+interface IProtocolFees {
     /**
      * @dev Emitted when the protocol manager collects accrued fees
      *
@@ -11,15 +11,12 @@ interface IProtocolFee {
      * @param token The token address
      * @param amount Amount collected
      */
-    event CollectFee(
-        address indexed collector,
-        address indexed recipient,
-        address indexed token,
-        uint256 amount
+    event CollectProtocolFees(
+        address indexed collector, address indexed recipient, address indexed token, uint256 amount
     );
 
     /**
-     * @dev Emitted when a new protocol fee is set for market with id of `id`
+     * @dev Emitted when a new protocol fee is set
      *
      */
     event SetProtocolFee(uint256 newFee);
@@ -28,10 +25,12 @@ interface IProtocolFee {
      * @dev Allows protocol managers to collect accrued fee in `token`
      *
      * @param token address of token contract
-     * @param receipient address to forward fund to
+     * @param recipient address to forward fund to
      * @param amount amount
      */
-    function collectFee(address token, address receipient, uint256 amount) external;
+    function collectProtocolFees(address token, address recipient, uint256 amount)
+        external
+        returns (uint256 amountCollected);
 
     /**
      * @dev Allows protocol managers to set fee for market with id `id`
@@ -46,5 +45,5 @@ interface IProtocolFee {
      * @param token address of token to check fees for
      * @return amount of unclaimed protocol fee
      */
-    function unclaimedFees(address token) external view returns (uint256 amount);
+    function unclaimedProtocolFees(address token) external view returns (uint256 amount);
 }

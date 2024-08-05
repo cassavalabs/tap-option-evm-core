@@ -38,10 +38,7 @@ library Currency {
             }
         } else {
             IERC20 token = IERC20(currency);
-            bool success = _callOptionalReturnBool(
-                token,
-                abi.encodeCall(token.transfer, (to, amount))
-            );
+            bool success = _callOptionalReturnBool(token, abi.encodeCall(token.transfer, (to, amount)));
 
             if (!success) revert ERC20TransferFailed();
         }
@@ -55,17 +52,9 @@ library Currency {
      * @param to receipient address
      * @param amount value to transfer
      */
-    function safeTransferFrom(
-        address currency,
-        address from,
-        address to,
-        uint256 amount
-    ) internal {
+    function safeTransferFrom(address currency, address from, address to, uint256 amount) internal {
         IERC20 token = IERC20(currency);
-        bool success = _callOptionalReturnBool(
-            token,
-            abi.encodeCall(token.transferFrom, (from, to, amount))
-        );
+        bool success = _callOptionalReturnBool(token, abi.encodeCall(token.transferFrom, (from, to, amount)));
 
         if (!success) revert ERC20TransferFailed();
     }
@@ -83,10 +72,7 @@ library Currency {
      * @param currency address of token
      * @param account the address to check balance for
      */
-    function balanceOf(
-        address currency,
-        address account
-    ) internal view returns (uint256) {
+    function balanceOf(address currency, address account) internal view returns (uint256) {
         if (currency.isNative()) {
             return account.balance;
         } else {
@@ -105,10 +91,7 @@ library Currency {
         IERC20(currency).approve(spender, amount);
     }
 
-    function _callOptionalReturnBool(
-        IERC20 token,
-        bytes memory data
-    ) private returns (bool) {
+    function _callOptionalReturnBool(IERC20 token, bytes memory data) private returns (bool) {
         bool success;
         uint256 returnSize;
         uint256 returnValue;
@@ -117,8 +100,6 @@ library Currency {
             returnSize := returndatasize()
             returnValue := mload(0)
         }
-        return
-            success &&
-            (returnSize == 0 ? address(token).code.length > 0 : returnValue == 1);
+        return success && (returnSize == 0 ? address(token).code.length > 0 : returnValue == 1);
     }
 }
