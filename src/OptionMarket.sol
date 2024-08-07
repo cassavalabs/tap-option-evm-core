@@ -160,6 +160,7 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
     function signup(uint256 tournamentId) external payable override {
         Market.Tournament storage tournament = tournaments[tournamentId];
 
+        if (tournament.config.startTime == 0) revert Errors.InvalidTournament();
         if (tournament.config.closingTime <= block.timestamp) {
             revert Errors.TournamentEnded();
         }
@@ -195,6 +196,7 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
         Market.Tournament storage tournament = tournaments[tournamentId];
         Market.TournamentConfig memory config = tournament.config;
 
+        if (config.startTime == 0) revert Errors.InvalidTournament();
         if (config.closingTime <= block.timestamp) revert Errors.TournamentEnded();
 
         Market.Entrant storage entrant = tournament.entrants[msg.sender];
@@ -271,9 +273,7 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
             params.prizePool == 0 ||
             params.winners == 0 ||
             params.closingTime < params.startTime
-        ) {
-            revert Errors.InvalidTournament();
-        }
+        ) revert Errors.InvalidTournament();
 
         uint256 tournamentId = tournamentIds;
         Market.Tournament storage tournament = tournaments[tournamentId];
@@ -324,6 +324,7 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
     ) external override onlyOperator {
         Market.Tournament storage tournament = tournaments[tournamentId];
 
+        if (tournament.config.startTime == 0) revert Errors.InvalidTournament();
         if (tournament.config.closingTime > block.timestamp) {
             revert Errors.TournamentOngoing();
         }
@@ -338,12 +339,15 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
         uint64 closingTime
     ) external override onlyOperator {
         Market.Tournament storage tournament = tournaments[tournamentId];
+        uint256 maxExtension = block.timestamp + 12 weeks;
 
         // ensure tournament exist
         if (tournament.config.startTime == 0) revert Errors.InvalidTournament();
         // ensure new closing time is in the future
         if (
-            tournament.config.closingTime > closingTime || block.timestamp > closingTime
+            tournament.config.closingTime > closingTime ||
+            block.timestamp > closingTime ||
+            closingTime > maxExtension
         ) {
             revert Errors.InvalidTimeConfig();
         }

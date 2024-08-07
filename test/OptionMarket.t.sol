@@ -346,6 +346,19 @@ contract OptionMarketTest is Test {
         vm.stopPrank();
     }
 
+    function test_signup_native_revertsIfTournamentNotFound() public {
+        uint64 tournamentId = 1;
+        uint256 entryFee = 0.25 ether;
+
+        vm.startPrank(user1);
+        vm.deal(user1, 1 ether);
+        vm.warp(200);
+
+        vm.expectRevert(Errors.InvalidTournament.selector);
+        market.signup{value: entryFee}(tournamentId);
+        vm.stopPrank();
+    }
+
     function test_signup_native_revertsIfTournamentEnded() public {
         uint64 tournamentId = execute_startTournament_native(15, 0, 30, 12 ether);
         uint256 entryFee = 0.25 ether;
@@ -384,6 +397,19 @@ contract OptionMarketTest is Test {
         emit SignUp(tournamentId, user2, DEFAULT_LOT_AMOUNT);
         market.signup(tournamentId);
 
+        vm.stopPrank();
+    }
+
+    function test_signup_erc20_revertsIfTournamentNotFound() public {
+        uint64 tournamentId = 1;
+
+        vm.startPrank(user1);
+        stone.mint(user1, 25e18);
+        stone.approve(address(market), MAX_INT);
+        vm.warp(200);
+
+        vm.expectRevert(Errors.InvalidTournament.selector);
+        market.signup(tournamentId);
         vm.stopPrank();
     }
 
@@ -863,7 +889,7 @@ contract OptionMarketTest is Test {
 
     function test_refill_erc20_revertsWhenNotSignedUp() public {
         vm.warp(100);
-        uint64 tournamentId = execute_startTournament_erc20(15, 0, 300, 15 ether);
+        uint64 tournamentId = execute_startTournament_erc20(15, 0, 300, 15e18);
 
         vm.startPrank(user1);
         stone.mint(user1, 50e18);
@@ -888,5 +914,91 @@ contract OptionMarketTest is Test {
         market.refill(tournamentId);
 
         vm.stopPrank();
+    }
+
+    function test_settleTournament_succeeds() public {
+        uint64 tournamentId = execute_startTournament_native(15, 0, 300, 15 ether);
+        vm.warp(310);
+        vm.prank(owner);
+        market.grantOperatorRole(operator);
+
+        bytes32 merkleRoot = bytes32(uint256(1));
+        vm.expectEmit();
+        emit SettleTournament(tournamentId, operator, merkleRoot);
+        vm.prank(operator);
+        market.settleTournament(tournamentId, merkleRoot);
+    }
+
+    function test_settleTournament_revertsIfTournamentNotFound() public {
+        uint64 tournamentId = 1;
+        vm.warp(310);
+        vm.prank(owner);
+        market.grantOperatorRole(operator);
+
+        bytes32 merkleRoot = bytes32(uint256(1));
+        vm.expectRevert(Errors.InvalidTournament.selector);
+        vm.prank(operator);
+        market.settleTournament(tournamentId, merkleRoot);
+    }
+
+    function test_settleTournament_revertsIfCallerNotOperator() public {
+        uint64 tournamentId = execute_startTournament_native(15, 0, 300, 15 ether);
+        vm.warp(310);
+
+        bytes32 merkleRoot = bytes32(uint256(1));
+        vm.expectRevert(NotOperator.selector);
+        market.settleTournament(tournamentId, merkleRoot);
+    }
+
+    function test_settleTournament_revertsIfTournamentOngoing() public {
+        uint64 tournamentId = execute_startTournament_native(15, 0, 300, 15 ether);
+        vm.prank(owner);
+        market.grantOperatorRole(operator);
+
+        bytes32 merkleRoot = bytes32(uint256(1));
+        vm.expectRevert(Errors.TournamentOngoing.selector);
+        vm.prank(operator);
+        market.settleTournament(tournamentId, merkleRoot);
+    }
+
+    function test_extendTournament_succeeds() public {
+        uint64 tournamentId = execute_startTournament_native(15, 0, 300, 15 ether);
+        vm.prank(owner);
+        market.grantOperatorRole(operator);
+
+        vm.warp(301);
+        vm.expectEmit();
+        emit ExtendTournament(tournamentId, 500);
+        vm.prank(operator);
+        market.extendTournament(tournamentId, 500);
+    }
+
+    function test_extendTournament_revertsWhenTournamentNotFound() public {
+        uint64 tournamentId = 1;
+        vm.prank(owner);
+        market.grantOperatorRole(operator);
+
+        vm.warp(301);
+        vm.expectRevert(Errors.InvalidTournament.selector);
+        vm.prank(operator);
+        market.extendTournament(tournamentId, 500);
+    }
+
+    function test_extendTournament_revertsIfTimeLessThanClosing() public {
+        uint64 tournamentId = execute_startTournament_native(15, 0, 300, 15 ether);
+        vm.prank(owner);
+        market.grantOperatorRole(operator);
+
+        vm.expectRevert(Errors.InvalidTimeConfig.selector);
+        vm.prank(operator);
+        market.extendTournament(tournamentId, 50);
+    }
+
+    function test_extendTournament_revertsWhenCallerNotOperator() public {
+        uint64 tournamentId = execute_startTournament_native(15, 0, 300, 15 ether);
+
+        vm.warp(301);
+        vm.expectRevert(NotOperator.selector);
+        market.extendTournament(tournamentId, 500);
     }
 }
