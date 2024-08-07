@@ -17,8 +17,8 @@ library Position {
         uint64 investment;
         // The user's choice of either `Bearish` or `Bullish`
         Option option;
-        // True if the reward has been claimed
-        bool rewardClaimed;
+        // True if the option has been exercised
+        bool settled;
         // The strike price for option
         int64 strikePrice;
         // The closing price of underlying asset
@@ -50,7 +50,11 @@ library Position {
      *
      * @return positionId Unique id for the users position in round
      */
-    function toId(MarketId id, uint256 sequenceId, address owner) internal pure returns (bytes32 positionId) {
+    function toId(
+        MarketId id,
+        uint256 sequenceId,
+        address owner
+    ) internal pure returns (bytes32 positionId) {
         positionId = keccak256(abi.encodePacked(id, sequenceId, owner));
     }
 }

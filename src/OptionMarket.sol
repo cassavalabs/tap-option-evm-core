@@ -22,18 +22,21 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
     using Currency for address;
     using Position for Position.State;
 
+    uint64 public constant MAX_REFILL = type(uint64).max - 1;
     uint8 public constant MAX_SECONDS_OFFSET = 5; // 5 seconds
     uint8 public constant MAX_SECONDS_DELAY = 30; // 30 seconds
+    uint32 public constant DEFAULT_LOT_AMOUNT = 100; // 100 USD
 
     IPyth public immutable pyth;
 
-    uint256 tournamentIds;
+    uint256 public tournamentIds;
     mapping(MarketId id => Market.MarketInfo) public markets;
     mapping(uint256 => Market.Tournament) internal tournaments;
     mapping(address currency => uint256) public totalValueLocked;
 
     constructor(address _owner, address _pyth) ProtocolFees(_owner) {
         pyth = IPyth(_pyth);
+        tournamentIds = 1;
     }
 
     /// @inheritdoc ICuratorFees
@@ -54,35 +57,68 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
     }
 
     /// @inheritdoc IOptionMarket
-    function bearish(MarketId id, uint64 tournamentId, uint64 investment, uint32 expiry, bytes calldata priceUpdate)
-        external
-        payable
-        override
-    {
-        (bytes32 positionId, int64 strikePrice) =
-            openPosition(id, tournamentId, investment, expiry, Option.wrap(0), priceUpdate);
+    function bearish(
+        MarketId id,
+        uint64 tournamentId,
+        uint64 investment,
+        uint32 expiry,
+        bytes calldata priceUpdate
+    ) external payable override {
+        (bytes32 positionId, int64 strikePrice) = openPosition(
+            id,
+            tournamentId,
+            investment,
+            expiry,
+            Option.wrap(0),
+            priceUpdate
+        );
 
-        emit Bearish(id, tournamentId, msg.sender, positionId, block.timestamp + expiry, investment, strikePrice);
+        emit Bearish(
+            id,
+            tournamentId,
+            msg.sender,
+            positionId,
+            block.timestamp + expiry,
+            investment,
+            strikePrice
+        );
     }
 
     /// @inheritdoc IOptionMarket
-    function bullish(MarketId id, uint64 tournamentId, uint64 investment, uint32 expiry, bytes calldata priceUpdate)
-        external
-        payable
-        override
-    {
-        (bytes32 positionId, int64 strikePrice) =
-            openPosition(id, tournamentId, investment, expiry, Option.wrap(1), priceUpdate);
+    function bullish(
+        MarketId id,
+        uint64 tournamentId,
+        uint64 investment,
+        uint32 expiry,
+        bytes calldata priceUpdate
+    ) external payable override {
+        (bytes32 positionId, int64 strikePrice) = openPosition(
+            id,
+            tournamentId,
+            investment,
+            expiry,
+            Option.wrap(1),
+            priceUpdate
+        );
 
-        emit Bullish(id, tournamentId, msg.sender, positionId, block.timestamp + expiry, investment, strikePrice);
+        emit Bullish(
+            id,
+            tournamentId,
+            msg.sender,
+            positionId,
+            block.timestamp + expiry,
+            investment,
+            strikePrice
+        );
     }
 
     /// @inheritdoc IOptionMarket
-    function settle(MarketId id, uint64 tournamentId, address account, bytes calldata priceUpdate)
-        external
-        payable
-        override
-    {
+    function settle(
+        MarketId id,
+        uint64 tournamentId,
+        address account,
+        bytes calldata priceUpdate
+    ) external payable override {
         Market.MarketInfo storage market = markets[id];
         Market.Tournament storage tournament = tournaments[tournamentId];
         Market.Entrant storage entrant = tournament.entrants[account];
@@ -94,16 +130,18 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
 
         // ensure it's a valid position
         if (position.investment == 0) revert Errors.PositionNotFound();
-        // ensure reward has not been claimed before
-        if (position.rewardClaimed) revert Errors.RewardClaimed();
 
-        int64 closingPrice =
-            parsePriceData(MarketId.unwrap(id), priceUpdate, uint64(position.expiry), MAX_SECONDS_OFFSET);
+        int64 closingPrice = parsePriceData(
+            MarketId.unwrap(id),
+            priceUpdate,
+            uint64(position.expiry),
+            MAX_SECONDS_OFFSET
+        );
 
         position.closingPrice = closingPrice;
-        position.rewardClaimed = true;
+        position.settled = true;
 
-        // increment the sequenceId
+        ///@dev increment the sequenceId to prevent reentrant claim
         market.sequenceIds[account][tournamentId] += 1;
         // remove from unsettled position queue
         entrant.unsettled -= 1;
@@ -130,7 +168,7 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
 
         if (entrant.isRegistered) revert Errors.AlreadySignedUp();
 
-        entrant.balance += tournament.lotAmount;
+        entrant.balance += tournament.config.lotAmount;
         entrant.isRegistered = true;
 
         tournament.entrantCount += 1;
@@ -142,16 +180,14 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
             addTVL(currency, entryFee);
             accountProtocolFee(currency, entryFee);
 
-            if (currency.isNative() && msg.value < entryFee) {
-                revert Errors.InsufficientFee();
-            }
-            // not sure how using else would play out here
-            if (!currency.isNative()) {
+            if (currency.isNative()) {
+                if (msg.value < entryFee) revert Errors.InsufficientFee();
+            } else {
                 currency.safeTransferFrom(msg.sender, address(this), entryFee);
             }
         }
 
-        emit SignUp(tournamentId, msg.sender, tournament.lotAmount);
+        emit SignUp(tournamentId, msg.sender, tournament.config.lotAmount);
     }
 
     /// @inheritdoc IOptionMarket
@@ -165,7 +201,7 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
 
         /// Ensure entrant is eligible to refill balance
         if (!entrant.isRegistered) revert Errors.NotSignedUp();
-        if (entrant.balance > tournament.lotAmount || entrant.unsettled > 0) {
+        if (entrant.balance >= config.lotAmount || entrant.unsettled > 0) {
             revert Errors.CannotRefill();
         }
         /// Check if max refill is set, revert if user has reached max refill
@@ -176,28 +212,29 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
             addTVL(config.currency, config.cost);
             accountProtocolFee(config.currency, config.cost);
 
-            if (config.currency.isNative() && msg.value < config.cost) {
-                revert Errors.InsufficientFee();
-            }
-            // not sure how using else would play out here
-            if (!config.currency.isNative()) {
+            if (config.currency.isNative()) {
+                if (msg.value < config.cost) revert Errors.InsufficientFee();
+            } else {
                 config.currency.safeTransferFrom(msg.sender, address(this), config.cost);
             }
         }
 
-        entrant.balance += tournament.lotAmount;
+        entrant.balance += config.lotAmount;
         entrant.refillCount += 1;
 
         tournament.refilCount += 1;
 
-        emit Refill(tournamentId, msg.sender, tournament.lotAmount);
+        emit Refill(tournamentId, msg.sender, config.lotAmount);
     }
 
     /// @inheritdoc IOptionMarket
-    function claim(uint256 tournamentId, bytes32[] memory proof, uint256 index, address account, uint256 amount)
-        external
-        override
-    {
+    function claim(
+        uint256 tournamentId,
+        bytes32[] memory proof,
+        uint256 index,
+        address account,
+        uint256 amount
+    ) external override {
         Market.Tournament storage tournament = tournaments[tournamentId];
 
         ///@dev Ensure reward is claimable
@@ -207,7 +244,9 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
         if (BitMaps.get(tournament.claimList, index)) revert Errors.RewardClaimed();
 
         ///@dev Construct leaf and verify claim
-        bytes32 leaf = keccak256(bytes.concat(keccak256(abi.encode(account, index, amount))));
+        bytes32 leaf = keccak256(
+            bytes.concat(keccak256(abi.encode(account, index, amount)))
+        );
 
         if (!MerkleProof.verify(proof, tournament.merkleRoot, leaf)) {
             revert Errors.InvalidMerkleProof();
@@ -225,8 +264,14 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
     }
 
     /// @inheritdoc IOptionMarketConfig
-    function startTournament(Market.StartTournamentParam memory params) external payable override {
-        if (params.prizePool == 0 || params.winners == 0 || params.closingTime < params.startTime) {
+    function startTournament(
+        Market.StartTournamentParam memory params
+    ) external payable override {
+        if (
+            params.prizePool == 0 ||
+            params.winners == 0 ||
+            params.closingTime < params.startTime
+        ) {
             revert Errors.InvalidTournament();
         }
 
@@ -238,25 +283,23 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
         config.winners = params.winners;
         config.startTime = params.startTime;
         config.closingTime = params.closingTime;
-        config.maxRefill = params.maxRefill;
+        config.maxRefill = MAX_REFILL;
         config.prizePool = params.prizePool;
         config.entryFee = params.entryFee;
         config.cost = params.cost;
 
-        tournament.lotAmount = params.lotAmount;
+        config.lotAmount = DEFAULT_LOT_AMOUNT;
         tournament.creator = msg.sender;
 
         // increment the ids
         tournamentIds += 1;
         // account for value received to aid token recovery
-        addTVL(config.currency, params.prizePool);
+        addTVL(params.currency, params.prizePool);
 
-        if (config.currency.isNative() && msg.value < params.prizePool) {
-            revert Errors.InsufficientRewardFund();
-        }
-        // not sure how using else would play out here
-        if (!config.currency.isNative()) {
-            config.currency.safeTransferFrom(msg.sender, address(this), params.prizePool);
+        if (params.currency.isNative()) {
+            if (msg.value < params.prizePool) revert Errors.InsufficientRewardFund();
+        } else {
+            params.currency.safeTransferFrom(msg.sender, address(this), params.prizePool);
         }
 
         emit StartTournament(
@@ -269,13 +312,16 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
             params.winners,
             params.startTime,
             params.closingTime,
-            params.maxRefill,
+            DEFAULT_LOT_AMOUNT,
             params.title
         );
     }
 
     /// @inheritdoc IOptionMarketConfig
-    function settleTournament(uint64 tournamentId, bytes32 merkleRoot) external override onlyOperator {
+    function settleTournament(
+        uint64 tournamentId,
+        bytes32 merkleRoot
+    ) external override onlyOperator {
         Market.Tournament storage tournament = tournaments[tournamentId];
 
         if (tournament.config.closingTime > block.timestamp) {
@@ -287,22 +333,30 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
     }
 
     /// @inheritdoc IOptionMarketConfig
-    function extendTournament(uint64 tournamentId, uint64 closingTime) external override onlyOperator {
+    function extendTournament(
+        uint64 tournamentId,
+        uint64 closingTime
+    ) external override onlyOperator {
         Market.Tournament storage tournament = tournaments[tournamentId];
 
         // ensure tournament exist
         if (tournament.config.startTime == 0) revert Errors.InvalidTournament();
         // ensure new closing time is in the future
-        if (tournament.config.closingTime > closingTime || block.timestamp > closingTime) {
+        if (
+            tournament.config.closingTime > closingTime || block.timestamp > closingTime
+        ) {
             revert Errors.InvalidTimeConfig();
         }
 
-        tournament.config.closingTime = uint48(closingTime);
+        tournament.config.closingTime = uint64(closingTime);
         emit ExtendTournament(tournamentId, closingTime);
     }
 
     /// @inheritdoc IOptionMarketConfig
-    function adjustMarketReward(MarketId id, uint16 reward) external override onlyOperator {
+    function adjustMarketReward(
+        MarketId id,
+        uint16 reward
+    ) external override onlyOperator {
         Market.MarketInfo storage market = markets[id];
         if (!market.config.isInitialized) revert Errors.MarketDoesNotExist();
         if (reward > BASIS_POINT) revert Errors.RewardExceedsMax();
@@ -312,11 +366,12 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
     }
 
     /// @inheritdoc IOptionMarketConfig
-    function createMarket(MarketId id, uint16 reward, uint32 minInterval, uint32 maxInterval)
-        external
-        override
-        onlyOperator
-    {
+    function createMarket(
+        MarketId id,
+        uint16 reward,
+        uint32 minInterval,
+        uint32 maxInterval
+    ) external override onlyOwner {
         Market.MarketInfo storage market = markets[id];
         Market.Config storage config = market.config;
 
@@ -333,7 +388,11 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
     }
 
     /// @inheritdoc IOptionMarketConfig
-    function adjustMarketExpiry(MarketId id, uint32 minExpiry, uint32 maxExpiry) external override onlyOperator {
+    function adjustMarketExpiry(
+        MarketId id,
+        uint32 minExpiry,
+        uint32 maxExpiry
+    ) external override onlyOperator {
         Market.Config storage config = markets[id].config;
 
         if (!config.isInitialized) revert Errors.MarketDoesNotExist();
@@ -346,7 +405,7 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
     }
 
     /// @inheritdoc IOptionMarketConfig
-    function pause(MarketId id) external override onlyOperator {
+    function pause(MarketId id) external override onlyOwnerOrOperator {
         Market.Config storage config = markets[id].config;
 
         if (!config.isInitialized) revert Errors.MarketDoesNotExist();
@@ -357,7 +416,7 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
     }
 
     /// @inheritdoc IOptionMarketConfig
-    function unpause(MarketId id) external override onlyOperator {
+    function unpause(MarketId id) external override onlyOwnerOrOperator {
         Market.Config storage config = markets[id].config;
 
         if (!config.isInitialized) revert Errors.MarketDoesNotExist();
@@ -368,7 +427,11 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
     }
 
     /// @inheritdoc IOptionMarketConfig
-    function recoverToken(address currency, address recipient, uint256 amount) external override {
+    function recoverToken(
+        address currency,
+        address recipient,
+        uint256 amount
+    ) external override onlyOwner {
         // Ensure recovering will not have a negative balance impact
         uint256 balanceBefore = currency.balanceOf(address(this));
         uint256 balanceAfter = balanceBefore - totalValueLocked[currency];
@@ -380,7 +443,9 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
     }
 
     /// @inheritdoc ICuratorFees
-    function unclaimedFees(uint64 tournamentId) external view override returns (uint256 amount) {
+    function unclaimedFees(
+        uint64 tournamentId
+    ) external view override returns (uint256 amount) {
         Market.Tournament storage tournament = tournaments[tournamentId];
         amount = tournament.fees;
     }
@@ -408,8 +473,13 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
         uint256 updateFee = pyth.getUpdateFee(updateData);
         if (msg.value < updateFee) revert Errors.InsufficientFee();
 
-        IPyth.PriceFeed[] memory priceFeeds = pyth.parsePriceFeedUpdates{value: updateFee}(
-            updateData, priceFeedIds, minPublishTime, uint64(minPublishTime + maxSecondsOffset)
+        IPyth.PriceFeed[] memory priceFeeds = pyth.parsePriceFeedUpdates{
+            value: updateFee
+        }(
+            updateData,
+            priceFeedIds,
+            minPublishTime,
+            uint64(minPublishTime + maxSecondsOffset)
         );
 
         IPyth.PriceFeed memory priceFeed = priceFeeds[0];
@@ -451,7 +521,10 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
 
         // fetch the strike price from Pyth Network oracle
         strikePrice = parsePriceData(
-            MarketId.unwrap(id), priceUpdate, uint64(block.timestamp - MAX_SECONDS_DELAY), MAX_SECONDS_DELAY
+            MarketId.unwrap(id),
+            priceUpdate,
+            uint64(block.timestamp - MAX_SECONDS_DELAY),
+            MAX_SECONDS_DELAY
         );
 
         uint256 sequenceId = market.sequenceIds[msg.sender][tournamentId];

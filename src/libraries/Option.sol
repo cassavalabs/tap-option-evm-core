@@ -7,8 +7,8 @@ type Option is uint8;
 library OptionLibrary {
     using OptionLibrary for Option;
 
-    Option public constant BEARISH = Option.wrap(1);
-    Option public constant BULLISH = Option.wrap(2);
+    Option public constant BEARISH = Option.wrap(0);
+    Option public constant BULLISH = Option.wrap(1);
 
     function isBearish(Option option) internal pure returns (bool) {
         return Option.unwrap(option) == Option.unwrap(BEARISH);

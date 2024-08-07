@@ -15,24 +15,26 @@ library Market {
     using OptionLibrary for Option;
     using Position for *;
 
-    /// @notice meta data for each tournament, should probably fit in 2 slots
+    /// @notice meta data for each tournament, should probably fit in 5 slots
     struct TournamentConfig {
         // token address for tickets/prize pool
         address currency;
+        // the USD amount users get credited on signup or refill
+        uint96 lotAmount;
         // number of winners
-        uint32 winners;
-        // timestamp when tournament will start
-        uint48 startTime;
-        // timestamp when tournament will end
-        uint48 closingTime;
+        uint64 winners;
         // max number of refill for tournament
-        uint16 maxRefill;
+        uint64 maxRefill;
+        // timestamp when tournament will start
+        uint64 startTime;
+        // timestamp when tournament will end
+        uint64 closingTime;
         // the amount to be distributed
-        uint80 prizePool;
+        uint256 prizePool;
         // the fee to join tournament
-        uint64 entryFee;
+        uint256 entryFee;
         // price for refilling deplicted balance
-        uint64 cost;
+        uint256 cost;
     }
 
     struct Tournament {
@@ -40,11 +42,9 @@ library Market {
         // address of the tournament creator
         address creator;
         // total number of unique entrants
-        uint24 entrantCount;
+        uint48 entrantCount;
         // the total refill count for the tournament
-        uint24 refilCount;
-        // the amount users get credited on signup or refill
-        uint40 lotAmount;
+        uint40 refilCount;
         // true if the fees has been claimes
         bool isFeeClaimed;
         // keeps track of fees collected
@@ -57,12 +57,12 @@ library Market {
         mapping(address => Entrant) entrants;
     }
 
-    /// @dev trying as much as possible to pack in a single slot
+    /// @dev trying as much as possible to fit into 2 slots
     struct Entrant {
-        uint32 refillCount;
-        uint184 balance;
-        uint16 unsettled;
-        uint16 positionCount;
+        uint256 balance;
+        uint120 refillCount;
+        uint64 unsettled;
+        uint64 positionCount;
         bool isRegistered;
     }
 
@@ -91,21 +91,17 @@ library Market {
         // token address for tickets/prize pool
         address currency;
         // number of winners
-        uint32 winners;
+        uint64 winners;
         // timestamp when tournament will start
-        uint48 startTime;
+        uint64 startTime;
         // timestamp when tournament will end
-        uint48 closingTime;
-        // max number of refill for tournament
-        uint16 maxRefill;
+        uint64 closingTime;
         // the amount to be distributed
-        uint80 prizePool;
+        uint256 prizePool;
         // the fee to join tournament
-        uint64 entryFee;
+        uint256 entryFee;
         // price for refilling deplicted balance
-        uint64 cost;
-        // lot amount
-        uint40 lotAmount;
+        uint256 cost;
         // title of tournament
         string title;
     }
