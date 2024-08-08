@@ -31,7 +31,7 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
 
     uint256 public tournamentIds;
     mapping(MarketId id => Market.MarketInfo) public markets;
-    mapping(uint256 => Market.Tournament) internal tournaments;
+    mapping(uint256 => Market.Tournament) private tournaments;
     mapping(address currency => uint256) public totalValueLocked;
 
     constructor(address _owner, address _pyth) ProtocolFees(_owner) {

@@ -1173,4 +1173,78 @@ contract OptionMarketTest is Test {
         uint256 unclaimedFees = market.unclaimedFees(tournamentId);
         assertEq(unclaimedFees == 1 ether, true);
     }
+
+    function test_recoveToken_native_succeeds() public {
+        uint64 tournamentId = execute_startTournament_native(15, 0, 30, 12 ether);
+        uint256 entryFee = 0.25 ether;
+
+        vm.startPrank(user1);
+        vm.deal(user1, 25 ether);
+        market.signup{value: 15.25 ether}(tournamentId);
+        vm.stopPrank();
+
+        vm.startPrank(user2);
+        vm.deal(user2, 1 ether);
+        market.signup{value: entryFee}(tournamentId);
+        vm.stopPrank();
+
+        vm.expectEmit();
+        emit RecoverToken(NATIVE_GAS_TOKEN, user1, 15 ether);
+        vm.prank(owner);
+        market.recoverToken(NATIVE_GAS_TOKEN, user1, 15 ether);
+
+        assertEq(user1.balance == 24.75 ether, true);
+    }
+
+    function test_recoveToken_native_revertsIfNotEnoughBalance() public {
+        uint64 tournamentId = execute_startTournament_native(15, 0, 30, 12 ether);
+        uint256 entryFee = 0.25 ether;
+
+        vm.startPrank(user1);
+        vm.deal(user1, 1 ether);
+        market.signup{value: entryFee}(tournamentId);
+        vm.stopPrank();
+
+        vm.startPrank(user2);
+        vm.deal(user2, 1 ether);
+        market.signup{value: entryFee}(tournamentId);
+        vm.stopPrank();
+
+        vm.expectRevert(Errors.InsufficientBalance.selector);
+        vm.prank(owner);
+        market.recoverToken(NATIVE_GAS_TOKEN, user1, 0.1 ether);
+    }
+
+    function test_recoveToken_erc20_succeeds() public {
+        vm.startPrank(user1);
+        stone.mint(user1, 50e18);
+        stone.approve(address(market), MAX_INT);
+        stone.transfer(address(market), 25e18);
+        vm.stopPrank();
+
+        assertEq(stone.balanceOf(address(market)) == 25e18, true);
+
+        vm.expectEmit();
+        emit RecoverToken(address(stone), user1, 25e18);
+        vm.prank(owner);
+        market.recoverToken(address(stone), user1, 25e18);
+
+        uint256 user1BalanceAfter = stone.balanceOf(user1);
+
+        assertEq(user1BalanceAfter == 50e18, true);
+    }
+
+    function test_recoveToken_erc20_revertsIfNotEnoughBalance() public {
+        uint64 tournamentId = execute_startTournament_erc20(15, 0, 30, 15e18);
+        vm.startPrank(user1);
+        stone.mint(user1, 50e18);
+        stone.approve(address(market), MAX_INT);
+        stone.transfer(address(market), 25e18);
+        market.signup(tournamentId);
+        vm.stopPrank();
+
+        vm.expectRevert(Errors.InsufficientBalance.selector);
+        vm.prank(owner);
+        market.recoverToken(address(stone), user1, 25.1e18);
+    }
 }
