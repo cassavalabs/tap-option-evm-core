@@ -64,7 +64,7 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
         uint32 expiry,
         bytes calldata priceUpdate
     ) external payable override {
-        (bytes32 positionId, int64 strikePrice) = openPosition(
+        (bytes32 positionId, int64 strikePrice) = takePosition(
             id,
             tournamentId,
             investment,
@@ -92,7 +92,7 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
         uint32 expiry,
         bytes calldata priceUpdate
     ) external payable override {
-        (bytes32 positionId, int64 strikePrice) = openPosition(
+        (bytes32 positionId, int64 strikePrice) = takePosition(
             id,
             tournamentId,
             investment,
@@ -492,7 +492,7 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
         latestPrice = price.price;
     }
 
-    function openPosition(
+    function takePosition(
         MarketId id,
         uint64 tournamentId,
         uint64 investment,

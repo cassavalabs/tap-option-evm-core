@@ -1001,4 +1001,176 @@ contract OptionMarketTest is Test {
         vm.expectRevert(NotOperator.selector);
         market.extendTournament(tournamentId, 500);
     }
+
+    function test_adjustMarketReward_succeeds() public {
+        vm.prank(owner);
+        market.createMarket(btcMarketId, 8500, 60, 300);
+        vm.prank(owner);
+        market.grantOperatorRole(operator);
+
+        vm.expectEmit();
+        emit AdjustMarketReward(btcMarketId, 9500);
+        vm.prank(operator);
+        market.adjustMarketReward(btcMarketId, 9500);
+    }
+
+    function test_adjustMarketReward_revertsIfMarketDoesNotExist() public {
+        vm.prank(owner);
+        market.grantOperatorRole(operator);
+
+        vm.expectRevert(Errors.MarketDoesNotExist.selector);
+        vm.prank(operator);
+        market.adjustMarketReward(btcMarketId, 9500);
+    }
+
+    function test_adjustMarketReward_revertsIfRewardExceedsMax() public {
+        vm.prank(owner);
+        market.createMarket(btcMarketId, 8500, 60, 300);
+        vm.prank(owner);
+        market.grantOperatorRole(operator);
+
+        vm.expectRevert(Errors.RewardExceedsMax.selector);
+        vm.prank(operator);
+        market.adjustMarketReward(btcMarketId, 16000);
+    }
+
+    function test_adjustMarketExpiry_succeeds() public {
+        vm.prank(owner);
+        market.createMarket(btcMarketId, 8500, 60, 300);
+        vm.prank(owner);
+        market.grantOperatorRole(operator);
+
+        vm.expectEmit();
+        emit AdjustMarketExpiry(btcMarketId, 120, 400);
+        vm.prank(operator);
+        market.adjustMarketExpiry(btcMarketId, 120, 400);
+    }
+
+    function test_adjustMarketExpiry_revertsIfMarketDoesNotExist() public {
+        vm.prank(owner);
+        market.grantOperatorRole(operator);
+
+        vm.expectRevert(Errors.MarketDoesNotExist.selector);
+        vm.prank(operator);
+        market.adjustMarketExpiry(btcMarketId, 120, 400);
+    }
+
+    function test_adjustMarketExpiry_revertsWhenTimeIdInvalid() public {
+        vm.prank(owner);
+        market.createMarket(btcMarketId, 8500, 60, 300);
+        vm.prank(owner);
+        market.grantOperatorRole(operator);
+
+        vm.expectRevert(Errors.InvalidTimeConfig.selector);
+        vm.prank(operator);
+        market.adjustMarketExpiry(btcMarketId, 20, 50);
+    }
+
+    function test_pause_succeeds_with_owner() public {
+        vm.prank(owner);
+        market.createMarket(btcMarketId, 8500, 60, 300);
+
+        vm.expectEmit();
+        emit Pause(btcMarketId);
+        vm.prank(owner);
+        market.pause(btcMarketId);
+    }
+
+    function test_pause_succeeds_with_operator() public {
+        vm.prank(owner);
+        market.createMarket(btcMarketId, 8500, 60, 300);
+        vm.prank(owner);
+        market.grantOperatorRole(operator);
+
+        vm.expectEmit();
+        emit Pause(btcMarketId);
+        vm.prank(operator);
+        market.pause(btcMarketId);
+    }
+
+    function test_pause_revertsIfMarketDoesNotExist() public {
+        vm.expectRevert(Errors.MarketDoesNotExist.selector);
+        vm.prank(owner);
+        market.pause(btcMarketId);
+    }
+
+    function test_pause_revertsIfMarketPausedAlready() public {
+        vm.startPrank(owner);
+        market.createMarket(btcMarketId, 8500, 60, 300);
+        market.pause(btcMarketId);
+
+        vm.expectRevert(Errors.MarketPaused.selector);
+        market.pause(btcMarketId);
+        vm.stopPrank();
+    }
+
+    //
+    function test_unpause_succeeds_with_owner() public {
+        vm.startPrank(owner);
+        market.createMarket(btcMarketId, 8500, 60, 300);
+        market.pause(btcMarketId);
+
+        vm.expectEmit();
+        emit UnPause(btcMarketId);
+        market.unpause(btcMarketId);
+        vm.stopPrank();
+    }
+
+    function test_unpause_succeeds_with_operator() public {
+        vm.prank(owner);
+        market.createMarket(btcMarketId, 8500, 60, 300);
+        vm.prank(owner);
+        market.grantOperatorRole(operator);
+
+        vm.prank(operator);
+        market.pause(btcMarketId);
+
+        vm.expectEmit();
+        emit UnPause(btcMarketId);
+        vm.prank(operator);
+        market.unpause(btcMarketId);
+    }
+
+    function test_unpause_revertsIfMarketDoesNotExist() public {
+        vm.expectRevert(Errors.MarketDoesNotExist.selector);
+        vm.prank(owner);
+        market.unpause(btcMarketId);
+    }
+
+    function test_unpause_revertsIfMarketNotPaused() public {
+        vm.startPrank(owner);
+        market.createMarket(btcMarketId, 8500, 60, 300);
+
+        vm.expectRevert(Errors.MarketNotPaused.selector);
+        market.unpause(btcMarketId);
+        vm.stopPrank();
+    }
+
+    function test_unclaimedFees() public {
+        uint64 tournamentId = execute_startTournament_native(15, 0, 30, 12 ether);
+        uint256 entryFee = 0.25 ether;
+
+        vm.startPrank(user1);
+        vm.deal(user1, 1 ether);
+        market.signup{value: entryFee}(tournamentId);
+        vm.stopPrank();
+
+        vm.startPrank(user2);
+        vm.deal(user2, 1 ether);
+        market.signup{value: entryFee}(tournamentId);
+        vm.stopPrank();
+
+        vm.startPrank(user3);
+        vm.deal(user3, 1 ether);
+        market.signup{value: entryFee}(tournamentId);
+        vm.stopPrank();
+
+        vm.startPrank(user4);
+        vm.deal(user4, 1 ether);
+        market.signup{value: entryFee}(tournamentId);
+        vm.stopPrank();
+
+        uint256 unclaimedFees = market.unclaimedFees(tournamentId);
+        assertEq(unclaimedFees == 1 ether, true);
+    }
 }
