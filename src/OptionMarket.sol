@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.23;
 
-import {ICuratorFees} from "./interfaces/ICuratorFees.sol";
 import {IOptionMarket} from "./interfaces/IOptionMarket.sol";
 import {IOptionMarketConfig} from "./interfaces/IOptionMarketConfig.sol";
+import {IProtocolFees} from "./interfaces/IProtocolFees.sol";
 import {IPyth} from "./interfaces/external/IPyth.sol";
 
 import {BitMaps} from "./libraries/BitMaps.sol";
@@ -16,9 +16,14 @@ import {MerkleProof} from "./libraries/MerkleProof.sol";
 import {Option} from "./libraries/Option.sol";
 import {Position} from "./libraries/Position.sol";
 
-import {ProtocolFees} from "./ProtocolFees.sol";
+import {Authorization} from "./auth/Authorization.sol";
 
-contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, ProtocolFees {
+contract OptionMarket is
+    IProtocolFees,
+    IOptionMarket,
+    IOptionMarketConfig,
+    Authorization
+{
     using Currency for address;
     using Position for Position.State;
 
@@ -26,34 +31,20 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
     uint8 public constant MAX_SECONDS_OFFSET = 5; // 5 seconds
     uint8 public constant MAX_SECONDS_DELAY = 30; // 30 seconds
     uint32 public constant DEFAULT_LOT_AMOUNT = 100; // 100 USD
+    uint16 public constant BASIS_POINT = 10_000;
 
     IPyth public immutable pyth;
 
     uint256 public tournamentIds;
     mapping(MarketId id => Market.MarketInfo) public markets;
     mapping(uint256 => Market.Tournament) private tournaments;
+    /// @dev keep track of fees owned to the protocol
+    mapping(address currency => uint256 accruedFee) private protocolFees;
     mapping(address currency => uint256) public totalValueLocked;
 
-    constructor(address _owner, address _pyth) ProtocolFees(_owner) {
+    constructor(address _owner, address _pyth) Authorization(_owner) {
         pyth = IPyth(_pyth);
         tournamentIds = 1;
-    }
-
-    /// @inheritdoc ICuratorFees
-    function collectFees(uint64 tournamentId) external override {
-        Market.Tournament storage tournament = tournaments[tournamentId];
-
-        if (msg.sender != tournament.creator) revert Errors.OnlyCreatorCanCollectFees();
-        if (tournament.isFeeClaimed) revert Errors.FeeClaimed();
-
-        address currency = tournament.config.currency;
-        uint256 amount = tournament.fees;
-        // mark claimed
-        tournament.isFeeClaimed = true;
-        deductTVL(currency, amount);
-
-        currency.transfer(msg.sender, amount);
-        emit CollectFee(tournamentId, msg.sender, currency, amount);
     }
 
     /// @inheritdoc IOptionMarket
@@ -172,14 +163,15 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
         entrant.balance += tournament.config.lotAmount;
         entrant.isRegistered = true;
 
-        tournament.entrantCount += 1;
+        // tournament.entrantCount += 1;
         address currency = tournament.config.currency;
         uint256 entryFee = tournament.config.entryFee;
 
         if (entryFee > 0) {
-            tournament.fees += entryFee;
-            addTVL(currency, entryFee);
-            accountProtocolFee(currency, entryFee);
+            unchecked {
+                totalValueLocked[currency] += entryFee;
+                protocolFees[currency] += entryFee;
+            }
 
             if (currency.isNative()) {
                 if (msg.value < entryFee) revert Errors.InsufficientFee();
@@ -209,22 +201,23 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
         /// Check if max refill is set, revert if user has reached max refill
         if (entrant.refillCount >= config.maxRefill) revert Errors.MaxRefillReached();
 
-        if (config.cost > 0) {
-            tournament.fees += config.cost;
-            addTVL(config.currency, config.cost);
-            accountProtocolFee(config.currency, config.cost);
+        address currency = config.currency;
+        uint256 rebuyPrice = config.cost;
+        if (rebuyPrice > 0) {
+            unchecked {
+                totalValueLocked[currency] += rebuyPrice;
+                protocolFees[currency] += rebuyPrice;
+            }
 
-            if (config.currency.isNative()) {
+            if (currency.isNative()) {
                 if (msg.value < config.cost) revert Errors.InsufficientFee();
             } else {
-                config.currency.safeTransferFrom(msg.sender, address(this), config.cost);
+                currency.safeTransferFrom(msg.sender, address(this), config.cost);
             }
         }
 
         entrant.balance += config.lotAmount;
         entrant.refillCount += 1;
-
-        tournament.refilCount += 1;
 
         emit Refill(tournamentId, msg.sender, config.lotAmount);
     }
@@ -256,7 +249,7 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
 
         address currency = tournament.config.currency;
 
-        deductTVL(currency, amount);
+        totalValueLocked[currency] -= amount;
         ///@dev tag as claimed to avoid reentrant claims
         BitMaps.setTo(tournament.claimList, index, true);
         ///@dev transfer fund to claimant
@@ -289,12 +282,11 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
         config.cost = params.cost;
 
         config.lotAmount = DEFAULT_LOT_AMOUNT;
-        tournament.creator = msg.sender;
 
         // increment the ids
         tournamentIds += 1;
         // account for value received to aid token recovery
-        addTVL(params.currency, params.prizePool);
+        totalValueLocked[params.currency] += params.prizePool;
 
         if (params.currency.isNative()) {
             if (msg.value < params.prizePool) revert Errors.InsufficientRewardFund();
@@ -446,20 +438,28 @@ contract OptionMarket is ICuratorFees, IOptionMarket, IOptionMarketConfig, Proto
         emit RecoverToken(currency, recipient, amount);
     }
 
-    /// @inheritdoc ICuratorFees
+    /// @inheritdoc IProtocolFees
+    function collectFees(
+        address currency,
+        address recipient,
+        uint256 amount
+    ) external override onlyOwner returns (uint256 amountCollected) {
+        /// @notice Ensures protocol manager can only claim what is owed
+        if (amount > protocolFees[currency]) revert Errors.InsufficientBalance();
+        amountCollected = (amount == 0) ? protocolFees[currency] : amount;
+
+        protocolFees[currency] -= amount;
+        totalValueLocked[currency] -= amountCollected;
+
+        currency.transfer(recipient, amountCollected);
+        emit CollectFees(msg.sender, recipient, currency, amountCollected);
+    }
+
+    /// @inheritdoc IProtocolFees
     function unclaimedFees(
-        uint64 tournamentId
+        address currency
     ) external view override returns (uint256 amount) {
-        Market.Tournament storage tournament = tournaments[tournamentId];
-        amount = tournament.fees;
-    }
-
-    function addTVL(address currency, uint256 amount) internal {
-        totalValueLocked[currency] += amount;
-    }
-
-    function deductTVL(address currency, uint256 amount) internal override {
-        totalValueLocked[currency] -= amount;
+        amount = protocolFees[currency];
     }
 
     function parsePriceData(

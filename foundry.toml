@@ -1,5 +1,5 @@
 [profile.default]
-optimizer_runs = 44444444
+optimizer_runs = 25_666
 via_ir = true
 ffi = true
 src = "src"
@@ -21,6 +21,5 @@ runs = 100000
 [profile.debug]
 via_ir = false
 optimizer_runs = 200
-fuzz = 10
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

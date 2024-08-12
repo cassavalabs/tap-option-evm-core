@@ -40,15 +40,15 @@ library Market {
     struct Tournament {
         TournamentConfig config;
         // address of the tournament creator
-        address creator;
+        // address creator;
         // total number of unique entrants
-        uint48 entrantCount;
+        // uint48 entrantCount;
         // the total refill count for the tournament
-        uint40 refilCount;
+        // uint40 refilCount;
         // true if the fees has been claimes
-        bool isFeeClaimed;
+        // bool isFeeClaimed;
         // keeps track of fees collected
-        uint256 fees;
+        // uint256 fees;
         // merkly root for claiming reward
         bytes32 merkleRoot;
         // map to track if reward is already claimed
@@ -57,12 +57,12 @@ library Market {
         mapping(address => Entrant) entrants;
     }
 
-    /// @dev trying as much as possible to fit into 2 slots
+    /// @dev trying as much as possible to fit into a slot
     struct Entrant {
-        uint256 balance;
-        uint120 refillCount;
-        uint64 unsettled;
-        uint64 positionCount;
+        uint176 balance;
+        uint24 refillCount;
+        uint24 unsettled;
+        uint24 positionCount;
         bool isRegistered;
     }
 

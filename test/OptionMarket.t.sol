@@ -1170,7 +1170,7 @@ contract OptionMarketTest is Test {
         market.signup{value: entryFee}(tournamentId);
         vm.stopPrank();
 
-        uint256 unclaimedFees = market.unclaimedFees(tournamentId);
+        uint256 unclaimedFees = market.unclaimedFees(NATIVE_GAS_TOKEN);
         assertEq(unclaimedFees == 1 ether, true);
     }
 
