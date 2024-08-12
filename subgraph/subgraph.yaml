@@ -16,25 +16,11 @@ dataSources:
       apiVersion: 0.0.7
       language: wasm/assemblyscript
       entities:
-        - AdjustMarketExpiry
-        - AdjustMarketReward
-        - Bearish
-        - Bullish
-        - Claim
-        - CollectFees
-        - CreateMarket
-        - ExtendTournament
-        - GrantOperatorRole
-        - OwnershipTransferred
-        - Pause
-        - RecoverToken
-        - Refill
-        - RevokeOperatorRole
-        - Settle
-        - SettleTournament
-        - SignUp
-        - StartTournament
-        - UnPause
+        - Account
+        - Tournament
+        - LeaderBoard
+        - Market
+        - Position
       abis:
         - name: OptionMarket
           file: ./abis/OptionMarket.json
@@ -55,18 +41,10 @@ dataSources:
           handler: handleCreateMarket
         - event: ExtendTournament(indexed uint256,uint64)
           handler: handleExtendTournament
-        - event: GrantOperatorRole(indexed address)
-          handler: handleGrantOperatorRole
-        - event: OwnershipTransferred(indexed address,indexed address)
-          handler: handleOwnershipTransferred
         - event: Pause(indexed bytes32)
           handler: handlePause
-        - event: RecoverToken(indexed address,indexed address,uint256)
-          handler: handleRecoverToken
         - event: Refill(indexed uint256,indexed address)
           handler: handleRefill
-        - event: RevokeOperatorRole(indexed address)
-          handler: handleRevokeOperatorRole
         - event: Settle(indexed bytes32,indexed uint256,indexed address,bytes32,uint256,int64)
           handler: handleSettle
         - event: SettleTournament(indexed uint256,indexed address,bytes32)
