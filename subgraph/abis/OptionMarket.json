@@ -1,0 +1,878 @@
+[
+  {
+    "inputs": [
+      { "internalType": "address", "name": "_owner", "type": "address" },
+      { "internalType": "address", "name": "_pyth", "type": "address" }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  { "inputs": [], "name": "AlreadySignedUp", "type": "error" },
+  { "inputs": [], "name": "CannotRefill", "type": "error" },
+  { "inputs": [], "name": "EntryNotAllowed", "type": "error" },
+  { "inputs": [], "name": "InsufficientBalance", "type": "error" },
+  { "inputs": [], "name": "InsufficientFee", "type": "error" },
+  { "inputs": [], "name": "InsufficientRewardFund", "type": "error" },
+  { "inputs": [], "name": "InvalidExpiryInterval", "type": "error" },
+  { "inputs": [], "name": "InvalidMerkleProof", "type": "error" },
+  { "inputs": [], "name": "InvalidTimeConfig", "type": "error" },
+  { "inputs": [], "name": "InvalidTournament", "type": "error" },
+  { "inputs": [], "name": "MarketAlreadyExist", "type": "error" },
+  { "inputs": [], "name": "MarketDoesNotExist", "type": "error" },
+  { "inputs": [], "name": "MarketNotPaused", "type": "error" },
+  { "inputs": [], "name": "MarketPaused", "type": "error" },
+  { "inputs": [], "name": "MaxRefillReached", "type": "error" },
+  { "inputs": [], "name": "NotOperator", "type": "error" },
+  { "inputs": [], "name": "NotOwner", "type": "error" },
+  { "inputs": [], "name": "NotSignedUp", "type": "error" },
+  { "inputs": [], "name": "PositionAlreadyExist", "type": "error" },
+  { "inputs": [], "name": "PositionNotFound", "type": "error" },
+  { "inputs": [], "name": "RewardClaimed", "type": "error" },
+  { "inputs": [], "name": "RewardExceedsMax", "type": "error" },
+  { "inputs": [], "name": "TournamentEnded", "type": "error" },
+  { "inputs": [], "name": "TournamentNotFinalized", "type": "error" },
+  { "inputs": [], "name": "TournamentOngoing", "type": "error" },
+  { "inputs": [], "name": "UnAuthorized", "type": "error" },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "MarketId",
+        "name": "id",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "minExpiry",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "maxExpiry",
+        "type": "uint32"
+      }
+    ],
+    "name": "AdjustMarketExpiry",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "MarketId",
+        "name": "id",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "reward",
+        "type": "uint16"
+      }
+    ],
+    "name": "AdjustMarketReward",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "MarketId",
+        "name": "id",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "tournamentId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "positionId",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "expiry",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "stake",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "int64",
+        "name": "price",
+        "type": "int64"
+      }
+    ],
+    "name": "Bearish",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "MarketId",
+        "name": "id",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "tournamentId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "positionId",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "expiry",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "stake",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "int64",
+        "name": "price",
+        "type": "int64"
+      }
+    ],
+    "name": "Bullish",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "tournamentId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "Claim",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "collector",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "recipient",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "CollectFees",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "MarketId",
+        "name": "id",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "creator",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "reward",
+        "type": "uint16"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "minInterval",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "maxInterval",
+        "type": "uint32"
+      }
+    ],
+    "name": "CreateMarket",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "tournamentId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "endTime",
+        "type": "uint64"
+      }
+    ],
+    "name": "ExtendTournament",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "GrantOperatorRole",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "prevOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "MarketId",
+        "name": "id",
+        "type": "bytes32"
+      }
+    ],
+    "name": "Pause",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "currency",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "recipient",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "RecoverToken",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "tournamentId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "Refill",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "RevokeOperatorRole",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "MarketId",
+        "name": "id",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "tournamentId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "positionId",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "reward",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "int64",
+        "name": "closingPrice",
+        "type": "int64"
+      }
+    ],
+    "name": "Settle",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "tournamentId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "operator",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "merkleRoot",
+        "type": "bytes32"
+      }
+    ],
+    "name": "SettleTournament",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "tournamentId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "SignUp",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "tournamentId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "initiator",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "currency",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "prizePool",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "entryFee",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "winners",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "startTime",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "endTime",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "maxRefillCount",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "title",
+        "type": "string"
+      }
+    ],
+    "name": "StartTournament",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "MarketId",
+        "name": "id",
+        "type": "bytes32"
+      }
+    ],
+    "name": "UnPause",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "BASIS_POINT",
+    "outputs": [{ "internalType": "uint16", "name": "", "type": "uint16" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "DEFAULT_LOT_AMOUNT",
+    "outputs": [{ "internalType": "uint32", "name": "", "type": "uint32" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "MAX_SECONDS_DELAY",
+    "outputs": [{ "internalType": "uint8", "name": "", "type": "uint8" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "MAX_SECONDS_OFFSET",
+    "outputs": [{ "internalType": "uint8", "name": "", "type": "uint8" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "MarketId", "name": "id", "type": "bytes32" },
+      { "internalType": "uint32", "name": "minExpiry", "type": "uint32" },
+      { "internalType": "uint32", "name": "maxExpiry", "type": "uint32" }
+    ],
+    "name": "adjustMarketExpiry",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "MarketId", "name": "id", "type": "bytes32" },
+      { "internalType": "uint16", "name": "reward", "type": "uint16" }
+    ],
+    "name": "adjustMarketReward",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "MarketId", "name": "id", "type": "bytes32" },
+      { "internalType": "uint64", "name": "tournamentId", "type": "uint64" },
+      { "internalType": "uint64", "name": "investment", "type": "uint64" },
+      { "internalType": "uint32", "name": "expiry", "type": "uint32" },
+      { "internalType": "bytes", "name": "priceUpdate", "type": "bytes" }
+    ],
+    "name": "bearish",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "MarketId", "name": "id", "type": "bytes32" },
+      { "internalType": "uint64", "name": "tournamentId", "type": "uint64" },
+      { "internalType": "uint64", "name": "investment", "type": "uint64" },
+      { "internalType": "uint32", "name": "expiry", "type": "uint32" },
+      { "internalType": "bytes", "name": "priceUpdate", "type": "bytes" }
+    ],
+    "name": "bullish",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "tournamentId", "type": "uint256" },
+      { "internalType": "bytes32[]", "name": "proof", "type": "bytes32[]" },
+      { "internalType": "address", "name": "account", "type": "address" },
+      { "internalType": "uint256", "name": "amount", "type": "uint256" }
+    ],
+    "name": "claim",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "currency", "type": "address" },
+      { "internalType": "address", "name": "recipient", "type": "address" },
+      { "internalType": "uint256", "name": "amount", "type": "uint256" }
+    ],
+    "name": "collectFees",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "amountCollected",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "MarketId", "name": "id", "type": "bytes32" },
+      { "internalType": "uint16", "name": "reward", "type": "uint16" },
+      { "internalType": "uint32", "name": "minInterval", "type": "uint32" },
+      { "internalType": "uint32", "name": "maxInterval", "type": "uint32" }
+    ],
+    "name": "createMarket",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint64", "name": "tournamentId", "type": "uint64" },
+      { "internalType": "uint64", "name": "closingTime", "type": "uint64" }
+    ],
+    "name": "extendTournament",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "account", "type": "address" }
+    ],
+    "name": "grantOperatorRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "account", "type": "address" }
+    ],
+    "name": "hasOperatorRole",
+    "outputs": [
+      { "internalType": "bool", "name": "isOperator", "type": "bool" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "MarketId", "name": "id", "type": "bytes32" }],
+    "name": "markets",
+    "outputs": [
+      {
+        "components": [
+          { "internalType": "uint112", "name": "minExpiry", "type": "uint112" },
+          { "internalType": "uint112", "name": "maxExpiry", "type": "uint112" },
+          { "internalType": "uint16", "name": "reward", "type": "uint16" },
+          { "internalType": "bool", "name": "paused", "type": "bool" },
+          { "internalType": "bool", "name": "isInitialized", "type": "bool" }
+        ],
+        "internalType": "struct Market.Config",
+        "name": "config",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "MarketId", "name": "id", "type": "bytes32" }],
+    "name": "pause",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "pyth",
+    "outputs": [
+      { "internalType": "contract IPyth", "name": "", "type": "address" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "currency", "type": "address" },
+      { "internalType": "address", "name": "recipient", "type": "address" },
+      { "internalType": "uint256", "name": "amount", "type": "uint256" }
+    ],
+    "name": "recoverToken",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "tournamentId", "type": "uint256" }
+    ],
+    "name": "refill",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "account", "type": "address" }
+    ],
+    "name": "revokeOperatorRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "MarketId", "name": "id", "type": "bytes32" },
+      { "internalType": "uint64", "name": "tournamentId", "type": "uint64" },
+      { "internalType": "address", "name": "account", "type": "address" },
+      { "internalType": "bytes", "name": "priceUpdate", "type": "bytes" }
+    ],
+    "name": "settle",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint64", "name": "tournamentId", "type": "uint64" },
+      { "internalType": "bytes32", "name": "merkleRoot", "type": "bytes32" }
+    ],
+    "name": "settleTournament",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "tournamentId", "type": "uint256" }
+    ],
+    "name": "signup",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          { "internalType": "address", "name": "currency", "type": "address" },
+          { "internalType": "uint24", "name": "winners", "type": "uint24" },
+          { "internalType": "uint48", "name": "startTime", "type": "uint48" },
+          { "internalType": "uint48", "name": "closingTime", "type": "uint48" },
+          { "internalType": "uint256", "name": "prizePool", "type": "uint256" },
+          { "internalType": "uint208", "name": "entryFee", "type": "uint208" },
+          {
+            "internalType": "uint24",
+            "name": "maxRefillCount",
+            "type": "uint24"
+          },
+          { "internalType": "string", "name": "title", "type": "string" }
+        ],
+        "internalType": "struct Market.StartTournamentParam",
+        "name": "params",
+        "type": "tuple"
+      }
+    ],
+    "name": "startTournament",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "currency", "type": "address" }
+    ],
+    "name": "totalValueLocked",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "tournamentIds",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "newOwner", "type": "address" }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "currency", "type": "address" }
+    ],
+    "name": "unclaimedFees",
+    "outputs": [
+      { "internalType": "uint256", "name": "amount", "type": "uint256" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "MarketId", "name": "id", "type": "bytes32" }],
+    "name": "unpause",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]
