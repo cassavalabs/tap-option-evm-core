@@ -114,10 +114,9 @@ interface IOptionMarket {
      *
      * @param tournamentId the tournament identifier
      * @param proof the merkle leaf sibling hashes
-     * @param index the leaf index
      * @param account the account addresss reward is accrued to
      * @param amount the amount to claim
      */
-    function claim(uint256 tournamentId, bytes32[] memory proof, uint256 index, address account, uint256 amount)
+    function claim(uint256 tournamentId, bytes32[] memory proof, address account, uint256 amount)
         external;
 }

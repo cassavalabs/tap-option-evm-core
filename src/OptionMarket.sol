@@ -234,7 +234,6 @@ contract OptionMarket is
     function claim(
         uint256 tournamentId,
         bytes32[] memory proof,
-        uint256 index,
         address account,
         uint256 amount
     ) external override {
@@ -243,13 +242,13 @@ contract OptionMarket is
         ///@dev Ensure reward is claimable
         if (tournament.merkleRoot == bytes32(0)) revert Errors.TournamentNotFinalized();
 
+        uint256 accountId = uint256(uint160(account));
+
         ///@dev Ensure the user has not claimed before
-        if (BitMaps.get(tournament.claimList, index)) revert Errors.RewardClaimed();
+        if (BitMaps.get(tournament.claimList, accountId)) revert Errors.RewardClaimed();
 
         ///@dev Construct leaf and verify claim
-        bytes32 leaf = keccak256(
-            bytes.concat(keccak256(abi.encode(account, index, amount)))
-        );
+        bytes32 leaf = keccak256(bytes.concat(keccak256(abi.encode(account, amount))));
 
         if (!MerkleProof.verify(proof, tournament.merkleRoot, leaf)) {
             revert Errors.InvalidMerkleProof();
@@ -259,7 +258,7 @@ contract OptionMarket is
 
         totalValueLocked[currency] -= amount;
         ///@dev tag as claimed to avoid reentrant claims
-        BitMaps.setTo(tournament.claimList, index, true);
+        BitMaps.setTo(tournament.claimList, accountId, true);
         ///@dev transfer fund to claimant
         currency.transfer(account, amount);
 
