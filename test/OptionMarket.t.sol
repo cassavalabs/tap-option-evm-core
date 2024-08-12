@@ -66,9 +66,9 @@ contract OptionMarketTest is Test {
         int64 closingPrice
     );
 
-    event SignUp(uint256 indexed tournamentId, address indexed account, uint256 amount);
+    event SignUp(uint256 indexed tournamentId, address indexed account);
 
-    event Refill(uint256 indexed tournamentId, address indexed account, uint256 amount);
+    event Refill(uint256 indexed tournamentId, address indexed account);
 
     event Claim(uint256 indexed tournamentId, address indexed account, uint256 amount);
 
@@ -78,11 +78,9 @@ contract OptionMarketTest is Test {
         address currency,
         uint256 prizePool,
         uint256 entryFee,
-        uint256 cost,
         uint64 winners,
         uint64 startTime,
         uint64 endTime,
-        uint64 maxRefill,
         string title
     );
 
@@ -130,7 +128,7 @@ contract OptionMarketTest is Test {
     }
 
     function execute_startTournament_native(
-        uint32 winners,
+        uint24 winners,
         uint32 startTime,
         uint32 duration,
         uint256 prizePool
@@ -140,11 +138,9 @@ contract OptionMarketTest is Test {
         Market.StartTournamentParam memory params = Market.StartTournamentParam(
             NATIVE_GAS_TOKEN,
             winners,
-            uint64(block.timestamp + startTime),
-            uint64(block.timestamp + duration),
-            // 15,
+            uint48(block.timestamp + startTime),
+            uint48(block.timestamp + duration),
             prizePool,
-            0.25 ether,
             0.25 ether,
             "Hello Future"
         );
@@ -153,7 +149,7 @@ contract OptionMarketTest is Test {
     }
 
     function execute_startTournament_erc20(
-        uint32 winners,
+        uint24 winners,
         uint32 startTime,
         uint32 duration,
         uint256 prizePool
@@ -166,10 +162,9 @@ contract OptionMarketTest is Test {
         Market.StartTournamentParam memory params = Market.StartTournamentParam(
             address(stone),
             winners,
-            uint64(block.timestamp + startTime),
-            uint64(block.timestamp + duration),
+            uint48(block.timestamp + startTime),
+            uint48(block.timestamp + duration),
             prizePool,
-            2e18,
             2e18,
             "Hello Future"
         );
@@ -241,11 +236,10 @@ contract OptionMarketTest is Test {
         Market.StartTournamentParam memory params = Market.StartTournamentParam(
             NATIVE_GAS_TOKEN,
             25,
-            uint64(block.timestamp),
-            uint64(block.timestamp + 30),
+            uint48(block.timestamp),
+            uint48(block.timestamp + 30),
             // 15,
             65 ether,
-            0.25 ether,
             0.25 ether,
             "Hello Future"
         );
@@ -257,11 +251,9 @@ contract OptionMarketTest is Test {
             params.currency,
             params.prizePool,
             params.entryFee,
-            params.cost,
             params.winners,
             params.startTime,
             params.closingTime,
-            DEFAULT_LOT_AMOUNT,
             params.title
         );
 
@@ -280,10 +272,9 @@ contract OptionMarketTest is Test {
         Market.StartTournamentParam memory params = Market.StartTournamentParam(
             address(stone),
             25,
-            uint64(block.timestamp),
-            uint64(block.timestamp + 30),
+            uint48(block.timestamp),
+            uint48(block.timestamp + 30),
             21e18,
-            2e18,
             2e18,
             "Hello Future"
         );
@@ -295,11 +286,9 @@ contract OptionMarketTest is Test {
             params.currency,
             params.prizePool,
             params.entryFee,
-            params.cost,
             params.winners,
             params.startTime,
             params.closingTime,
-            DEFAULT_LOT_AMOUNT,
             params.title
         );
 
@@ -317,11 +306,9 @@ contract OptionMarketTest is Test {
         Market.StartTournamentParam memory params = Market.StartTournamentParam(
             NATIVE_GAS_TOKEN,
             25,
-            uint64(block.timestamp),
-            uint64(block.timestamp + 30),
-            // 15,
+            uint48(block.timestamp),
+            uint48(block.timestamp + 30),
             65 ether,
-            0.25 ether,
             0.25 ether,
             "Hello Future"
         );
@@ -341,7 +328,7 @@ contract OptionMarketTest is Test {
         vm.deal(user1, 1 ether);
 
         vm.expectEmit();
-        emit SignUp(tournamentId, user1, DEFAULT_LOT_AMOUNT);
+        emit SignUp(tournamentId, user1);
         market.signup{value: entryFee}(tournamentId);
         vm.stopPrank();
     }
@@ -394,7 +381,7 @@ contract OptionMarketTest is Test {
         stone.approve(address(market), MAX_INT);
 
         vm.expectEmit();
-        emit SignUp(tournamentId, user2, DEFAULT_LOT_AMOUNT);
+        emit SignUp(tournamentId, user2);
         market.signup(tournamentId);
 
         vm.stopPrank();
@@ -783,7 +770,7 @@ contract OptionMarketTest is Test {
         );
 
         vm.expectEmit();
-        emit Refill(tournamentId, user1, DEFAULT_LOT_AMOUNT);
+        emit Refill(tournamentId, user1);
         market.refill{value: 0.25 ether}(tournamentId);
 
         vm.stopPrank();
@@ -881,7 +868,7 @@ contract OptionMarketTest is Test {
         );
 
         vm.expectEmit();
-        emit Refill(tournamentId, user1, DEFAULT_LOT_AMOUNT);
+        emit Refill(tournamentId, user1);
         market.refill(tournamentId);
 
         vm.stopPrank();

@@ -27,7 +27,7 @@ contract OptionMarket is
     using Currency for address;
     using Position for Position.State;
 
-    uint64 public constant MAX_REFILL = type(uint64).max - 1;
+    uint24 public constant MAX_REFILL = type(uint24).max - 1;
     uint8 public constant MAX_SECONDS_OFFSET = 5; // 5 seconds
     uint8 public constant MAX_SECONDS_DELAY = 30; // 30 seconds
     uint32 public constant DEFAULT_LOT_AMOUNT = 100; // 100 USD
@@ -135,9 +135,9 @@ contract OptionMarket is
         ///@dev increment the sequenceId to prevent reentrant claim
         unchecked {
             market.sequenceIds[account][tournamentId] += 1;
+            // remove from unsettled position queue
+            entrant.unsettled -= 1;
         }
-        // remove from unsettled position queue
-        entrant.unsettled -= 1;
 
         uint64 reward;
         if (position.isRewardable()) {
@@ -165,7 +165,7 @@ contract OptionMarket is
         if (entrant.isRegistered) revert Errors.AlreadySignedUp();
 
         unchecked {
-            entrant.balance += tournament.config.lotAmount;
+            entrant.balance += DEFAULT_LOT_AMOUNT;
         }
         entrant.isRegistered = true;
 
@@ -186,7 +186,7 @@ contract OptionMarket is
             }
         }
 
-        emit SignUp(tournamentId, msg.sender, tournament.config.lotAmount);
+        emit SignUp(tournamentId, msg.sender);
     }
 
     /// @inheritdoc IOptionMarket
@@ -201,14 +201,14 @@ contract OptionMarket is
 
         /// Ensure entrant is eligible to refill balance
         if (!entrant.isRegistered) revert Errors.NotSignedUp();
-        if (entrant.balance >= config.lotAmount || entrant.unsettled > 0) {
+        if (entrant.balance >= DEFAULT_LOT_AMOUNT || entrant.unsettled > 0) {
             revert Errors.CannotRefill();
         }
         /// Check if max refill is set, revert if user has reached max refill
         if (entrant.refillCount >= config.maxRefill) revert Errors.MaxRefillReached();
 
         address currency = config.currency;
-        uint256 rebuyPrice = config.cost;
+        uint256 rebuyPrice = config.entryFee;
         if (rebuyPrice > 0) {
             unchecked {
                 totalValueLocked[currency] += rebuyPrice;
@@ -216,18 +216,18 @@ contract OptionMarket is
             }
 
             if (currency.isNative()) {
-                if (msg.value < config.cost) revert Errors.InsufficientFee();
+                if (msg.value < rebuyPrice) revert Errors.InsufficientFee();
             } else {
-                currency.safeTransferFrom(msg.sender, address(this), config.cost);
+                currency.safeTransferFrom(msg.sender, address(this), rebuyPrice);
             }
         }
 
         unchecked {
-            entrant.balance += config.lotAmount;
+            entrant.balance += DEFAULT_LOT_AMOUNT;
             entrant.refillCount += 1;
         }
 
-        emit Refill(tournamentId, msg.sender, config.lotAmount);
+        emit Refill(tournamentId, msg.sender);
     }
 
     /// @inheritdoc IOptionMarket
@@ -287,9 +287,6 @@ contract OptionMarket is
         config.maxRefill = MAX_REFILL;
         config.prizePool = params.prizePool;
         config.entryFee = params.entryFee;
-        config.cost = params.cost;
-
-        config.lotAmount = DEFAULT_LOT_AMOUNT;
 
         unchecked {
             // increment the ids
@@ -310,11 +307,9 @@ contract OptionMarket is
             params.currency,
             params.prizePool,
             params.entryFee,
-            params.cost,
             params.winners,
             params.startTime,
             params.closingTime,
-            DEFAULT_LOT_AMOUNT,
             params.title
         );
     }
@@ -354,7 +349,7 @@ contract OptionMarket is
             revert Errors.InvalidTimeConfig();
         }
 
-        tournament.config.closingTime = uint64(closingTime);
+        tournament.config.closingTime = uint48(closingTime);
         emit ExtendTournament(tournamentId, closingTime);
     }
 

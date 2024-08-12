@@ -46,12 +46,12 @@ interface IOptionMarket {
     /**
      * @notice Emitted whenever a new user signs up for tournament
      */
-    event SignUp(uint256 indexed tournamentId, address indexed account, uint256 amount);
+    event SignUp(uint256 indexed tournamentId, address indexed account);
 
     /**
      * @notice Emitted whenever an account refills it's tournament balance
      */
-    event Refill(uint256 indexed tournamentId, address indexed account, uint256 amount);
+    event Refill(uint256 indexed tournamentId, address indexed account);
 
     /**
      * @notice Emitted whenever an account claims tournament reward

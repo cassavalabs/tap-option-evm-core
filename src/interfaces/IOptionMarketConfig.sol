@@ -15,11 +15,9 @@ interface IOptionMarketConfig {
         address currency,
         uint256 prizePool,
         uint256 entryFee,
-        uint256 cost,
         uint64 winners,
         uint64 startTime,
         uint64 endTime,
-        uint64 maxRefill,
         string title
     );
 

@@ -3,52 +3,30 @@
 pragma solidity ^0.8.23;
 
 import {BitMaps} from "./BitMaps.sol";
-import {Currency} from "./Currency.sol";
-import {Errors} from "./Errors.sol";
 import {MarketId} from "./MarketId.sol";
-import {MerkleProof} from "./MerkleProof.sol";
-import {Option, OptionLibrary} from "./Option.sol";
 import {Position} from "./Position.sol";
 
 library Market {
-    using Currency for address;
-    using OptionLibrary for Option;
-    using Position for *;
-
-    /// @notice meta data for each tournament, should probably fit in 5 slots
+    /// @notice meta data for each tournament, should probably fit in 3 slots
     struct TournamentConfig {
         // token address for tickets/prize pool
         address currency;
-        // the USD amount users get credited on signup or refill
-        uint96 lotAmount;
-        // number of winners
-        uint64 winners;
-        // max number of refill for tournament
-        uint64 maxRefill;
         // timestamp when tournament will start
-        uint64 startTime;
+        uint48 startTime;
         // timestamp when tournament will end
-        uint64 closingTime;
+        uint48 closingTime;
+        // the fee to join tournament
+        uint208 entryFee;
+        // number of winners
+        uint24 winners;
+        // max number of refill for tournament
+        uint24 maxRefill;
         // the amount to be distributed
         uint256 prizePool;
-        // the fee to join tournament
-        uint256 entryFee;
-        // price for refilling deplicted balance
-        uint256 cost;
     }
 
     struct Tournament {
         TournamentConfig config;
-        // address of the tournament creator
-        // address creator;
-        // total number of unique entrants
-        // uint48 entrantCount;
-        // the total refill count for the tournament
-        // uint40 refilCount;
-        // true if the fees has been claimes
-        // bool isFeeClaimed;
-        // keeps track of fees collected
-        // uint256 fees;
         // merkly root for claiming reward
         bytes32 merkleRoot;
         // map to track if reward is already claimed
@@ -91,17 +69,15 @@ library Market {
         // token address for tickets/prize pool
         address currency;
         // number of winners
-        uint64 winners;
+        uint24 winners;
         // timestamp when tournament will start
-        uint64 startTime;
+        uint48 startTime;
         // timestamp when tournament will end
-        uint64 closingTime;
+        uint48 closingTime;
         // the amount to be distributed
         uint256 prizePool;
         // the fee to join tournament
-        uint256 entryFee;
-        // price for refilling deplicted balance
-        uint256 cost;
+        uint208 entryFee;
         // title of tournament
         string title;
     }
