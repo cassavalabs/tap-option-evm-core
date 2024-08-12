@@ -81,6 +81,7 @@ contract OptionMarketTest is Test {
         uint64 winners,
         uint64 startTime,
         uint64 endTime,
+        uint64 maxRefillCount,
         string title
     );
 
@@ -142,6 +143,7 @@ contract OptionMarketTest is Test {
             uint48(block.timestamp + duration),
             prizePool,
             0.25 ether,
+            1,
             "Hello Future"
         );
         tournamentId = uint64(market.tournamentIds());
@@ -166,6 +168,7 @@ contract OptionMarketTest is Test {
             uint48(block.timestamp + duration),
             prizePool,
             2e18,
+            1,
             "Hello Future"
         );
         tournamentId = uint64(market.tournamentIds());
@@ -241,6 +244,7 @@ contract OptionMarketTest is Test {
             // 15,
             65 ether,
             0.25 ether,
+            1,
             "Hello Future"
         );
 
@@ -254,6 +258,7 @@ contract OptionMarketTest is Test {
             params.winners,
             params.startTime,
             params.closingTime,
+            1,
             params.title
         );
 
@@ -276,6 +281,7 @@ contract OptionMarketTest is Test {
             uint48(block.timestamp + 30),
             21e18,
             2e18,
+            1,
             "Hello Future"
         );
 
@@ -289,6 +295,7 @@ contract OptionMarketTest is Test {
             params.winners,
             params.startTime,
             params.closingTime,
+            1,
             params.title
         );
 
@@ -310,6 +317,7 @@ contract OptionMarketTest is Test {
             uint48(block.timestamp + 30),
             65 ether,
             0.25 ether,
+            1,
             "Hello Future"
         );
 

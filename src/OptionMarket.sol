@@ -27,7 +27,6 @@ contract OptionMarket is
     using Currency for address;
     using Position for Position.State;
 
-    uint24 public constant MAX_REFILL = type(uint24).max - 1;
     uint8 public constant MAX_SECONDS_OFFSET = 5; // 5 seconds
     uint8 public constant MAX_SECONDS_DELAY = 30; // 30 seconds
     uint32 public constant DEFAULT_LOT_AMOUNT = 100; // 100 USD
@@ -283,7 +282,7 @@ contract OptionMarket is
         config.winners = params.winners;
         config.startTime = params.startTime;
         config.closingTime = params.closingTime;
-        config.maxRefill = MAX_REFILL;
+        config.maxRefill = params.maxRefillCount;
         config.prizePool = params.prizePool;
         config.entryFee = params.entryFee;
 
@@ -309,6 +308,7 @@ contract OptionMarket is
             params.winners,
             params.startTime,
             params.closingTime,
+            params.maxRefillCount,
             params.title
         );
     }

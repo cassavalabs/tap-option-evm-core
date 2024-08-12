@@ -18,6 +18,7 @@ interface IOptionMarketConfig {
         uint64 winners,
         uint64 startTime,
         uint64 endTime,
+        uint64 maxRefillCount,
         string title
     );
 

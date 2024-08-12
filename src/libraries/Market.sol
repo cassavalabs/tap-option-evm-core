@@ -78,6 +78,8 @@ library Market {
         uint256 prizePool;
         // the fee to join tournament
         uint208 entryFee;
+        // the maximum number of rebuys allowed
+        uint24 maxRefillCount;
         // title of tournament
         string title;
     }
