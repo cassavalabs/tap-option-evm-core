@@ -1,197 +1,115 @@
-type AdjustMarketExpiry @entity(immutable: true) {
-  id: Bytes!
-  OptionMarket_id: Bytes! # bytes32
-  minExpiry: BigInt! # uint32
-  maxExpiry: BigInt! # uint32
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
+type Account @entity {
+  # account bytes32 address
+  id: ID!
+  # this accounts positions
+  positions: [Position!]! @derivedFrom(field: "account")
+  # this accounts tournament entries
+  tournaments: [LeaderBoard!]! @derivedFrom(field: "account")
+  # unix timestamp this account was created at
+  createdAt: BigInt!
 }
 
-type AdjustMarketReward @entity(immutable: true) {
-  id: Bytes!
-  OptionMarket_id: Bytes! # bytes32
-  reward: Int! # uint16
+type Tournament @entity {
+  # tornament ID
+  id: ID!
+  # the account that started the tournament
+  initiator: String!
+  # the currency for prize pool / entry / rebuy fees
+  currency: String!
+  # the amount to be distributed to top winners
+  prizePool: BigDecimal!
+  # the entre fee amount
+  entryFee: BigDecimal!
+  # the number of participating users
+  entrants: BigInt!
+  # the total number of times entrants refilled their balance
+  rebuyCount: BigInt!
+  # the number of possible winners
+  winners: BigInt!
+  # unix timestamp when tournament will begin
+  startTime: BigInt!
+  # unix timestamp when tournament will end
+  closingTime: BigInt!
+  # the max number of times a user can refill their balance
+  maxRebuyCount: BigInt!
+  # the block this tournament was registered
   blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
+  # the unix timestamp tournament was created
+  createdAt: BigInt!
+  # the winners claim list merkle root
+  merkleRoot: String!
+  # the title of the tournament
+  title: String!
+  # tournament leader board
+  leaderBoard: [LeaderBoard!]! @derivedFrom(field: "tournament")
 }
 
-type Bearish @entity(immutable: true) {
-  id: Bytes!
-  OptionMarket_id: Bytes! # bytes32
-  tournamentId: BigInt! # uint256
-  account: Bytes! # address
-  positionId: Bytes! # bytes32
-  expiry: BigInt! # uint256
-  stake: BigInt! # uint256
-  price: BigInt! # int64
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
+type LeaderBoard @entity {
+  # tournamentId-account
+  id: ID!
+  # the tournament this leader board is for
+  tournament: Tournament!
+  # the entrant account
+  account: Account!
+  # user tournament balance
+  balance: BigDecimal!
+  # the tournament reward claimed
+  rewardAmountClaimed: BigDecimal!
+  # number of times user refilled their balance
+  rebuyCount: BigInt!
+  # total positions unsettled
+  openPositions: BigInt!
+  # the total number of positions opened during tournament
+  totalPositions: BigInt!
+  # the unix timestamp when user joined tournament
+  createdAt: BigInt!
 }
 
-type Bullish @entity(immutable: true) {
-  id: Bytes!
-  OptionMarket_id: Bytes! # bytes32
-  tournamentId: BigInt! # uint256
-  account: Bytes! # address
-  positionId: Bytes! # bytes32
-  expiry: BigInt! # uint256
-  stake: BigInt! # uint256
-  price: BigInt! # int64
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
+type Market @entity {
+  # pyth network oracle feed id
+  id: ID!
+  # unix timestamp this market was created at
+  createdAt: BigInt!
+  # block market was created at
+  createdAtBlockNumber: BigInt!
+  # the minimum expiry time in seconds
+  minExpiry: BigInt!
+  # the maximum expiry time in seconds
+  maxExpiry: BigInt!
+  # the percentage reward for winning positions
+  reward: BigInt!
+  # true if the market is paused and participation is temporarilly disabled
+  paused: Boolean!
 }
 
-type Claim @entity(immutable: true) {
-  id: Bytes!
-  tournamentId: BigInt! # uint256
-  account: Bytes! # address
-  amount: BigInt! # uint256
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
+enum Option {
+  HIGH
+  LOW
 }
 
-type CollectFees @entity(immutable: true) {
-  id: Bytes!
-  collector: Bytes! # address
-  recipient: Bytes! # address
-  token: Bytes! # address
-  amount: BigInt! # uint256
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
-type CreateMarket @entity(immutable: true) {
-  id: Bytes!
-  OptionMarket_id: Bytes! # bytes32
-  creator: Bytes! # address
-  reward: Int! # uint16
-  minInterval: BigInt! # uint32
-  maxInterval: BigInt! # uint32
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
-type ExtendTournament @entity(immutable: true) {
-  id: Bytes!
-  tournamentId: BigInt! # uint256
-  endTime: BigInt! # uint64
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
-type GrantOperatorRole @entity(immutable: true) {
-  id: Bytes!
-  account: Bytes! # address
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
-type OwnershipTransferred @entity(immutable: true) {
-  id: Bytes!
-  prevOwner: Bytes! # address
-  newOwner: Bytes! # address
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
-type Pause @entity(immutable: true) {
-  id: Bytes!
-  OptionMarket_id: Bytes! # bytes32
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
-type RecoverToken @entity(immutable: true) {
-  id: Bytes!
-  currency: Bytes! # address
-  recipient: Bytes! # address
-  amount: BigInt! # uint256
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
-type Refill @entity(immutable: true) {
-  id: Bytes!
-  tournamentId: BigInt! # uint256
-  account: Bytes! # address
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
-type RevokeOperatorRole @entity(immutable: true) {
-  id: Bytes!
-  account: Bytes! # address
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
-type Settle @entity(immutable: true) {
-  id: Bytes!
-  OptionMarket_id: Bytes! # bytes32
-  tournamentId: BigInt! # uint256
-  account: Bytes! # address
-  positionId: Bytes! # bytes32
-  reward: BigInt! # uint256
-  closingPrice: BigInt! # int64
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
-type SettleTournament @entity(immutable: true) {
-  id: Bytes!
-  tournamentId: BigInt! # uint256
-  operator: Bytes! # address
-  merkleRoot: Bytes! # bytes32
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
-type SignUp @entity(immutable: true) {
-  id: Bytes!
-  tournamentId: BigInt! # uint256
-  account: Bytes! # address
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
-type StartTournament @entity(immutable: true) {
-  id: Bytes!
-  tournamentId: BigInt! # uint256
-  initiator: Bytes! # address
-  currency: Bytes! # address
-  prizePool: BigInt! # uint256
-  entryFee: BigInt! # uint256
-  winners: BigInt! # uint64
-  startTime: BigInt! # uint64
-  endTime: BigInt! # uint64
-  maxRefillCount: BigInt! # uint64
-  title: String! # string
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
-type UnPause @entity(immutable: true) {
-  id: Bytes!
-  OptionMarket_id: Bytes! # bytes32
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
+type Position @entity {
+  # positionId = keccak256(abi.encodePacked(marketId, sequenceId, owner))
+  id: ID!
+  # account
+  account: Account!
+  # the market this position was opened in
+  market: Market!
+  # amount staked as wager for position
+  investment: BigDecimal!
+  # predicted market directon
+  option: Option!
+  # the strike price for option
+  strikePrice: BigInt!
+  # the closing price of underlying asset
+  closingPrice: BigInt!
+  # true if user has excercised the option at expiry
+  isRewardClaimed: Boolean!
+  # amount of reward claimed
+  rewardAmountClaimed: BigDecimal!
+  # unix timestamp when position was created
+  createdAt: BigInt!
+  # the option expiry time
+  expiryTime: BigInt!
+  # tournament this position was opened for
+  tournament: Tournament
 }
