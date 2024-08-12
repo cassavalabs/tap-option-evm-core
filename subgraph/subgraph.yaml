@@ -35,8 +35,6 @@ dataSources:
           handler: handleBullish
         - event: Claim(indexed uint256,indexed address,uint256)
           handler: handleClaim
-        - event: CollectFees(indexed address,indexed address,indexed address,uint256)
-          handler: handleCollectFees
         - event: CreateMarket(indexed bytes32,address,uint16,uint32,uint32)
           handler: handleCreateMarket
         - event: ExtendTournament(indexed uint256,uint64)

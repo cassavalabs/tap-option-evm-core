@@ -1,337 +1,261 @@
+import { BigDecimal, BigInt } from "@graphprotocol/graph-ts";
 import {
   AdjustMarketExpiry as AdjustMarketExpiryEvent,
   AdjustMarketReward as AdjustMarketRewardEvent,
   Bearish as BearishEvent,
   Bullish as BullishEvent,
   Claim as ClaimEvent,
-  CollectFees as CollectFeesEvent,
   CreateMarket as CreateMarketEvent,
   ExtendTournament as ExtendTournamentEvent,
-  GrantOperatorRole as GrantOperatorRoleEvent,
-  OwnershipTransferred as OwnershipTransferredEvent,
   Pause as PauseEvent,
-  RecoverToken as RecoverTokenEvent,
   Refill as RefillEvent,
-  RevokeOperatorRole as RevokeOperatorRoleEvent,
   Settle as SettleEvent,
   SettleTournament as SettleTournamentEvent,
   SignUp as SignUpEvent,
   StartTournament as StartTournamentEvent,
-  UnPause as UnPauseEvent
-} from "../generated/OptionMarket/OptionMarket"
-import {
-  AdjustMarketExpiry,
-  AdjustMarketReward,
-  Bearish,
-  Bullish,
-  Claim,
-  CollectFees,
-  CreateMarket,
-  ExtendTournament,
-  GrantOperatorRole,
-  OwnershipTransferred,
-  Pause,
-  RecoverToken,
-  Refill,
-  RevokeOperatorRole,
-  Settle,
-  SettleTournament,
-  SignUp,
-  StartTournament,
-  UnPause
-} from "../generated/schema"
+  UnPause as UnPauseEvent,
+} from "../generated/OptionMarket/OptionMarket";
+import { Account, LeaderBoard, Market, Position, Tournament } from "../generated/schema";
+
+let ONE_BI = BigInt.fromI32(1);
+let ZERO_BI = BigInt.fromI32(0);
+let ZERO_BD = BigDecimal.fromString("0");
+let LOT_AMOUNT_BD = BigDecimal.fromString("100");
 
 export function handleAdjustMarketExpiry(event: AdjustMarketExpiryEvent): void {
-  let entity = new AdjustMarketExpiry(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.OptionMarket_id = event.params.id
-  entity.minExpiry = event.params.minExpiry
-  entity.maxExpiry = event.params.maxExpiry
+  let market = Market.load(event.params.id.toHexString());
 
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
+  if (market) {
+    market.minExpiry = event.params.minExpiry;
+    market.maxExpiry = event.params.maxExpiry;
 
-  entity.save()
+    market.save();
+  }
 }
 
 export function handleAdjustMarketReward(event: AdjustMarketRewardEvent): void {
-  let entity = new AdjustMarketReward(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.OptionMarket_id = event.params.id
-  entity.reward = event.params.reward
+  let market = Market.load(event.params.id.toHexString());
 
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
-
-  entity.save()
+  if (market) {
+    market.reward = BigInt.fromU64(event.params.reward);
+    market.save();
+  }
 }
 
 export function handleBearish(event: BearishEvent): void {
-  let entity = new Bearish(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.OptionMarket_id = event.params.id
-  entity.tournamentId = event.params.tournamentId
-  entity.account = event.params.account
-  entity.positionId = event.params.positionId
-  entity.expiry = event.params.expiry
-  entity.stake = event.params.stake
-  entity.price = event.params.price
+  let positionId = event.params.positionId.toHexString();
+  let position = Position.load(positionId);
 
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
+  if (!position) {
+    position = new Position(positionId);
+    position.account = event.params.account.toHexString();
+    position.closingPrice = ZERO_BI;
+    position.createdAt = event.block.timestamp;
+    position.expiryTime = event.params.expiry;
+    position.investment = event.params.stake.toBigDecimal();
+    position.isRewardClaimed = false;
+    position.market = event.params.id.toHexString();
+    position.option = "LOW";
+    position.rewardAmountClaimed = ZERO_BD;
+    position.strikePrice = event.params.price;
+    position.tournament = event.params.tournamentId.toHexString();
 
-  entity.save()
+    position.save();
+  }
+
+  let leaderboard = LeaderBoard.load(
+    event.params.tournamentId.toHexString().concat("#").concat(event.params.account.toHexString()),
+  );
+
+  if (leaderboard) {
+    leaderboard.openPositions = leaderboard.openPositions.plus(ONE_BI);
+    leaderboard.totalPositions = leaderboard.totalPositions.plus(ONE_BI);
+    leaderboard.save();
+  }
 }
 
 export function handleBullish(event: BullishEvent): void {
-  let entity = new Bullish(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.OptionMarket_id = event.params.id
-  entity.tournamentId = event.params.tournamentId
-  entity.account = event.params.account
-  entity.positionId = event.params.positionId
-  entity.expiry = event.params.expiry
-  entity.stake = event.params.stake
-  entity.price = event.params.price
+  let positionId = event.params.positionId.toHexString();
+  let position = Position.load(positionId);
 
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
+  if (!position) {
+    position = new Position(positionId);
+    position.account = event.params.account.toHexString();
+    position.closingPrice = ZERO_BI;
+    position.createdAt = event.block.timestamp;
+    position.expiryTime = event.params.expiry;
+    position.investment = event.params.stake.toBigDecimal();
+    position.isRewardClaimed = false;
+    position.market = event.params.id.toHexString();
+    position.option = "HIGH";
+    position.rewardAmountClaimed = ZERO_BD;
+    position.strikePrice = event.params.price;
+    position.tournament = event.params.tournamentId.toHexString();
 
-  entity.save()
+    position.save();
+  }
+
+  let leaderboard = LeaderBoard.load(
+    event.params.tournamentId.toHexString().concat("#").concat(event.params.account.toHexString()),
+  );
+
+  if (leaderboard) {
+    leaderboard.openPositions = leaderboard.openPositions.plus(ONE_BI);
+    leaderboard.totalPositions = leaderboard.totalPositions.plus(ONE_BI);
+    leaderboard.save();
+  }
 }
 
 export function handleClaim(event: ClaimEvent): void {
-  let entity = new Claim(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.tournamentId = event.params.tournamentId
-  entity.account = event.params.account
-  entity.amount = event.params.amount
+  let leaderboardId = event.params.tournamentId.toHexString().concat("#").concat(event.params.account.toHexString());
+  let leaderboard = LeaderBoard.load(leaderboardId);
 
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
-
-  entity.save()
-}
-
-export function handleCollectFees(event: CollectFeesEvent): void {
-  let entity = new CollectFees(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.collector = event.params.collector
-  entity.recipient = event.params.recipient
-  entity.token = event.params.token
-  entity.amount = event.params.amount
-
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
-
-  entity.save()
+  if (leaderboard) {
+    leaderboard.rewardAmountClaimed = event.params.amount.toBigDecimal();
+    leaderboard.save();
+  }
 }
 
 export function handleCreateMarket(event: CreateMarketEvent): void {
-  let entity = new CreateMarket(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.OptionMarket_id = event.params.id
-  entity.creator = event.params.creator
-  entity.reward = event.params.reward
-  entity.minInterval = event.params.minInterval
-  entity.maxInterval = event.params.maxInterval
+  let market = Market.load(event.params.id.toHexString());
 
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
+  if (!market) {
+    market = new Market(event.params.id.toHexString());
+    market.createdAt = event.block.timestamp;
+    market.createdAtBlockNumber = event.block.number;
+    market.maxExpiry = event.params.maxInterval;
+    market.minExpiry = event.params.minInterval;
+    market.paused = false;
+    market.reward = BigInt.fromI32(event.params.reward);
 
-  entity.save()
+    market.save();
+  }
 }
 
 export function handleExtendTournament(event: ExtendTournamentEvent): void {
-  let entity = new ExtendTournament(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.tournamentId = event.params.tournamentId
-  entity.endTime = event.params.endTime
+  let tournament = Tournament.load(event.params.tournamentId.toHexString());
 
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
-
-  entity.save()
-}
-
-export function handleGrantOperatorRole(event: GrantOperatorRoleEvent): void {
-  let entity = new GrantOperatorRole(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.account = event.params.account
-
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
-
-  entity.save()
-}
-
-export function handleOwnershipTransferred(
-  event: OwnershipTransferredEvent
-): void {
-  let entity = new OwnershipTransferred(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.prevOwner = event.params.prevOwner
-  entity.newOwner = event.params.newOwner
-
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
-
-  entity.save()
+  if (tournament) {
+    tournament.closingTime = event.params.endTime;
+    tournament.save();
+  }
 }
 
 export function handlePause(event: PauseEvent): void {
-  let entity = new Pause(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.OptionMarket_id = event.params.id
+  let market = Market.load(event.params.id.toHexString());
 
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
-
-  entity.save()
-}
-
-export function handleRecoverToken(event: RecoverTokenEvent): void {
-  let entity = new RecoverToken(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.currency = event.params.currency
-  entity.recipient = event.params.recipient
-  entity.amount = event.params.amount
-
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
-
-  entity.save()
+  if (market) {
+    market.paused = true;
+    market.save();
+  }
 }
 
 export function handleRefill(event: RefillEvent): void {
-  let entity = new Refill(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.tournamentId = event.params.tournamentId
-  entity.account = event.params.account
+  let leaderboardId = event.params.tournamentId.toHexString().concat(event.params.account.toHexString());
+  let leaderboard = LeaderBoard.load(leaderboardId);
 
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
+  if (leaderboard) {
+    leaderboard.balance = leaderboard.balance.plus(LOT_AMOUNT_BD);
+    leaderboard.rebuyCount = leaderboard.rebuyCount.plus(ONE_BI);
 
-  entity.save()
-}
-
-export function handleRevokeOperatorRole(event: RevokeOperatorRoleEvent): void {
-  let entity = new RevokeOperatorRole(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.account = event.params.account
-
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
-
-  entity.save()
+    leaderboard.save();
+  }
 }
 
 export function handleSettle(event: SettleEvent): void {
-  let entity = new Settle(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.OptionMarket_id = event.params.id
-  entity.tournamentId = event.params.tournamentId
-  entity.account = event.params.account
-  entity.positionId = event.params.positionId
-  entity.reward = event.params.reward
-  entity.closingPrice = event.params.closingPrice
+  let position = Position.load(event.params.positionId.toHexString());
 
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
+  if (position) {
+    position.closingPrice = event.params.closingPrice;
+    position.isRewardClaimed = true;
+    position.rewardAmountClaimed = event.params.reward.toBigDecimal();
 
-  entity.save()
+    position.save();
+  }
+
+  let leaderboard = LeaderBoard.load(
+    event.params.tournamentId.toHexString().concat("#").concat(event.params.account.toHexString()),
+  );
+
+  if (leaderboard) {
+    leaderboard.balance = leaderboard.balance.plus(event.params.reward.toBigDecimal());
+    leaderboard.openPositions = leaderboard.openPositions.minus(ONE_BI);
+
+    leaderboard.save();
+  }
 }
 
 export function handleSettleTournament(event: SettleTournamentEvent): void {
-  let entity = new SettleTournament(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.tournamentId = event.params.tournamentId
-  entity.operator = event.params.operator
-  entity.merkleRoot = event.params.merkleRoot
+  let tournament = Tournament.load(event.params.tournamentId.toHexString());
 
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
-
-  entity.save()
+  if (tournament) {
+    tournament.merkleRoot = event.params.merkleRoot.toHexString();
+    tournament.save();
+  }
 }
 
 export function handleSignUp(event: SignUpEvent): void {
-  let entity = new SignUp(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.tournamentId = event.params.tournamentId
-  entity.account = event.params.account
+  let tournament = Tournament.load(event.params.tournamentId.toHexString());
+  let account = Account.load(event.params.account.toHexString());
+  let leaderboardId = event.params.tournamentId.toHexString().concat("#").concat(event.params.account.toHexString());
+  let leaderboard = LeaderBoard.load(leaderboardId);
 
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
+  if (tournament) {
+    tournament.entrants = tournament.entrants.plus(ONE_BI);
+    tournament.save();
+  }
 
-  entity.save()
+  if (!account) {
+    account = new Account(event.params.account.toHexString());
+    account.createdAt = event.block.timestamp;
+
+    account.save();
+  }
+
+  if (!leaderboard) {
+    leaderboard = new LeaderBoard(leaderboardId);
+    leaderboard.account = event.params.account.toHexString();
+    leaderboard.createdAt = event.block.timestamp;
+    leaderboard.balance = LOT_AMOUNT_BD;
+    leaderboard.openPositions = ZERO_BI;
+    leaderboard.rebuyCount = ZERO_BI;
+    leaderboard.rewardAmountClaimed = ZERO_BD;
+    leaderboard.totalPositions = ZERO_BI;
+    leaderboard.tournament = event.params.tournamentId.toHexString();
+
+    leaderboard.save();
+  }
 }
 
 export function handleStartTournament(event: StartTournamentEvent): void {
-  let entity = new StartTournament(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.tournamentId = event.params.tournamentId
-  entity.initiator = event.params.initiator
-  entity.currency = event.params.currency
-  entity.prizePool = event.params.prizePool
-  entity.entryFee = event.params.entryFee
-  entity.winners = event.params.winners
-  entity.startTime = event.params.startTime
-  entity.endTime = event.params.endTime
-  entity.maxRefillCount = event.params.maxRefillCount
-  entity.title = event.params.title
+  let tournament = Tournament.load(event.params.tournamentId.toHexString());
 
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
+  if (!tournament) {
+    tournament = new Tournament(event.params.tournamentId.toHexString());
+    tournament.blockNumber = event.block.number;
+    tournament.closingTime = event.params.endTime;
+    tournament.createdAt = event.block.timestamp;
+    tournament.currency = event.params.currency.toHexString();
+    tournament.entrants = ZERO_BI;
+    tournament.entryFee = event.params.entryFee.toBigDecimal();
+    tournament.initiator = event.params.initiator.toHexString();
+    tournament.maxRebuyCount = event.params.maxRefillCount;
+    tournament.merkleRoot = "";
+    tournament.prizePool = event.params.prizePool.toBigDecimal();
+    tournament.rebuyCount = ZERO_BI;
+    tournament.startTime = event.params.startTime;
+    tournament.title = event.params.title;
+    tournament.winners = event.params.winners;
 
-  entity.save()
+    tournament.save();
+  }
 }
 
 export function handleUnPause(event: UnPauseEvent): void {
-  let entity = new UnPause(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.OptionMarket_id = event.params.id
+  let market = Market.load(event.params.id.toHexString());
 
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
-
-  entity.save()
+  if (market) {
+    market.paused = false;
+    market.save();
+  }
 }
