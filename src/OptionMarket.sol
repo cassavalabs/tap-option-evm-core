@@ -133,15 +133,19 @@ contract OptionMarket is
         position.settled = true;
 
         ///@dev increment the sequenceId to prevent reentrant claim
-        market.sequenceIds[account][tournamentId] += 1;
+        unchecked {
+            market.sequenceIds[account][tournamentId] += 1;
+        }
         // remove from unsettled position queue
         entrant.unsettled -= 1;
 
         uint64 reward;
         if (position.isRewardable()) {
-            reward = (market.config.reward * position.investment) / BASIS_POINT;
-            reward += position.investment;
-            entrant.balance += reward;
+            unchecked {
+                reward = (market.config.reward * position.investment) / BASIS_POINT;
+                reward += position.investment;
+                entrant.balance += reward;
+            }
         }
 
         emit Settle(id, tournamentId, account, positionId, reward, closingPrice);
@@ -160,7 +164,9 @@ contract OptionMarket is
 
         if (entrant.isRegistered) revert Errors.AlreadySignedUp();
 
-        entrant.balance += tournament.config.lotAmount;
+        unchecked {
+            entrant.balance += tournament.config.lotAmount;
+        }
         entrant.isRegistered = true;
 
         // tournament.entrantCount += 1;
@@ -216,8 +222,10 @@ contract OptionMarket is
             }
         }
 
-        entrant.balance += config.lotAmount;
-        entrant.refillCount += 1;
+        unchecked {
+            entrant.balance += config.lotAmount;
+            entrant.refillCount += 1;
+        }
 
         emit Refill(tournamentId, msg.sender, config.lotAmount);
     }
@@ -283,10 +291,12 @@ contract OptionMarket is
 
         config.lotAmount = DEFAULT_LOT_AMOUNT;
 
-        // increment the ids
-        tournamentIds += 1;
-        // account for value received to aid token recovery
-        totalValueLocked[params.currency] += params.prizePool;
+        unchecked {
+            // increment the ids
+            tournamentIds += 1;
+            // account for value received to aid token recovery
+            totalValueLocked[params.currency] += params.prizePool;
+        }
 
         if (params.currency.isNative()) {
             if (msg.value < params.prizePool) revert Errors.InsufficientRewardFund();
@@ -518,10 +528,12 @@ contract OptionMarket is
             revert Errors.InvalidExpiryInterval();
         }
 
-        // deduct entrant balance
-        entrant.balance -= investment;
-        entrant.positionCount += 1;
-        entrant.unsettled += 1;
+        unchecked {
+            // deduct entrant balance
+            entrant.balance -= investment;
+            entrant.positionCount += 1;
+            entrant.unsettled += 1;
+        }
 
         // fetch the strike price from Pyth Network oracle
         strikePrice = parsePriceData(
