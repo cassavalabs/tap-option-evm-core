@@ -19,8 +19,8 @@ library Market {
         uint208 entryFee;
         // number of winners
         uint24 winners;
-        // max number of refill for tournament
-        uint24 maxRefill;
+        // the amount users get credited on signup or rebuy
+        uint24 lot;
         // the amount to be distributed
         uint256 prizePool;
     }
@@ -78,8 +78,8 @@ library Market {
         uint256 prizePool;
         // the fee to join tournament
         uint208 entryFee;
-        // the maximum number of rebuys allowed
-        uint24 maxRefillCount;
+        // the amount users get credited on signup or rebuy
+        uint24 lot;
         // title of tournament
         string title;
     }

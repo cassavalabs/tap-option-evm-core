@@ -8,7 +8,7 @@ import {IAuthorization} from "../interfaces/IAuthorization.sol";
  * @title Authorization
  * @notice Allow owner or operators to securely manage some protocol operations
  */
-abstract contract Authorization is IAuthorization {
+contract Authorization is IAuthorization {
     address public owner;
     mapping(address account => bool isOperator) public hasOperatorRole;
 

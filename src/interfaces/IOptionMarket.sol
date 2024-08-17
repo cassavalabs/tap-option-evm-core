@@ -44,6 +44,16 @@ interface IOptionMarket {
     );
 
     /**
+     * @notice Emitted whenever an option is cancelled
+     */
+    event Purge(
+        MarketId indexed id,
+        uint256 indexed tournamentId,
+        address indexed account,
+        bytes32 positionId
+    );
+
+    /**
      * @notice Emitted whenever a new user signs up for tournament
      */
     event SignUp(uint256 indexed tournamentId, address indexed account);
@@ -67,9 +77,13 @@ interface IOptionMarket {
      * @param expiry the option expiry in seconds after openning
      * @param priceUpdate the pyth network price update data
      */
-    function bearish(MarketId id, uint64 tournamentId, uint64 investment, uint32 expiry, bytes calldata priceUpdate)
-        external
-        payable;
+    function bearish(
+        MarketId id,
+        uint64 tournamentId,
+        uint64 investment,
+        uint32 expiry,
+        bytes calldata priceUpdate
+    ) external payable;
 
     /**
      * @dev Called to open a bullish position on a market
@@ -80,9 +94,13 @@ interface IOptionMarket {
      * @param expiry the option expiry in seconds after openning
      * @param priceUpdate the pyth network price update data
      */
-    function bullish(MarketId id, uint64 tournamentId, uint64 investment, uint32 expiry, bytes calldata priceUpdate)
-        external
-        payable;
+    function bullish(
+        MarketId id,
+        uint64 tournamentId,
+        uint64 investment,
+        uint32 expiry,
+        bytes calldata priceUpdate
+    ) external payable;
 
     /**
      * @dev Allow anyone to excercise the option at expiration
@@ -92,7 +110,20 @@ interface IOptionMarket {
      * @param account the position owner address
      * @param priceUpdate the pyth network price update data
      */
-    function settle(MarketId id, uint64 tournamentId, address account, bytes calldata priceUpdate) external payable;
+    function settle(
+        MarketId id,
+        uint64 tournamentId,
+        address account,
+        bytes calldata priceUpdate
+    ) external payable;
+
+    /**
+     * @dev Allow position owner to cancel their position after option expiry
+     *
+     * @param id the market identifier
+     * @param tournamentId the tournament identifier
+     */
+    function purge(MarketId id, uint256 tournamentId) external;
 
     /**
      * @dev Allow anyone to signup as entrants to tournament
@@ -115,8 +146,14 @@ interface IOptionMarket {
      * @param tournamentId the tournament identifier
      * @param proof the merkle leaf sibling hashes
      * @param account the account addresss reward is accrued to
+     * @param rank the account index on the leaderboard
      * @param amount the amount to claim
      */
-    function claim(uint256 tournamentId, bytes32[] memory proof, address account, uint256 amount)
-        external;
+    function claim(
+        uint256 tournamentId,
+        bytes32[] memory proof,
+        address account,
+        uint256 rank,
+        uint256 amount
+    ) external;
 }

@@ -29,7 +29,8 @@ contract OptionMarket is
 
     uint8 public constant MAX_SECONDS_OFFSET = 5; // 5 seconds
     uint8 public constant MAX_SECONDS_DELAY = 30; // 30 seconds
-    uint32 public constant DEFAULT_LOT_AMOUNT = 100; // 100 USD
+    uint24 public constant DEFAULT_LOT_AMOUNT = 100; // 100 USD
+    uint24 public constant MAX_LOT_AMOUNT = 100_000; // 100,000 USD
     uint16 public constant BASIS_POINT = 10_000;
 
     IPyth public immutable pyth;
@@ -151,6 +152,32 @@ contract OptionMarket is
     }
 
     /// @inheritdoc IOptionMarket
+    function purge(MarketId id, uint256 tournamentId) external override {
+        Market.MarketInfo storage market = markets[id];
+        Market.Tournament storage tournament = tournaments[tournamentId];
+        Market.Entrant storage entrant = tournament.entrants[msg.sender];
+
+        uint256 sequenceId = market.sequenceIds[msg.sender][tournamentId];
+        bytes32 positionId = Position.toId(id, sequenceId, msg.sender);
+
+        Position.State storage position = market.positions[positionId];
+
+        // ensure it's a valid position
+        if (position.investment == 0) revert Errors.PositionNotFound();
+
+        position.settled = true;
+
+        ///@dev increment the sequenceId
+        unchecked {
+            market.sequenceIds[msg.sender][tournamentId] += 1;
+            // remove from unsettled position queue
+            entrant.unsettled -= 1;
+        }
+
+        emit Purge(id, tournamentId, msg.sender, positionId);
+    }
+
+    /// @inheritdoc IOptionMarket
     function signup(uint256 tournamentId) external payable override {
         Market.Tournament storage tournament = tournaments[tournamentId];
 
@@ -200,11 +227,9 @@ contract OptionMarket is
 
         /// Ensure entrant is eligible to refill balance
         if (!entrant.isRegistered) revert Errors.NotSignedUp();
-        if (entrant.balance >= DEFAULT_LOT_AMOUNT || entrant.unsettled > 0) {
+        if (entrant.balance >= config.lot || entrant.unsettled > 0) {
             revert Errors.CannotRefill();
         }
-        /// Check if max refill is set, revert if user has reached max refill
-        if (entrant.refillCount >= config.maxRefill) revert Errors.MaxRefillReached();
 
         address currency = config.currency;
         uint256 rebuyPrice = config.entryFee;
@@ -222,7 +247,7 @@ contract OptionMarket is
         }
 
         unchecked {
-            entrant.balance += DEFAULT_LOT_AMOUNT;
+            entrant.balance += config.lot;
             entrant.refillCount += 1;
         }
 
@@ -234,6 +259,7 @@ contract OptionMarket is
         uint256 tournamentId,
         bytes32[] memory proof,
         address account,
+        uint256 rank,
         uint256 amount
     ) external override {
         Market.Tournament storage tournament = tournaments[tournamentId];
@@ -241,13 +267,13 @@ contract OptionMarket is
         ///@dev Ensure reward is claimable
         if (tournament.merkleRoot == bytes32(0)) revert Errors.TournamentNotFinalized();
 
-        uint256 accountId = uint256(uint160(account));
-
         ///@dev Ensure the user has not claimed before
-        if (BitMaps.get(tournament.claimList, accountId)) revert Errors.RewardClaimed();
+        if (BitMaps.get(tournament.claimList, rank)) revert Errors.RewardClaimed();
 
         ///@dev Construct leaf and verify claim
-        bytes32 leaf = keccak256(bytes.concat(keccak256(abi.encode(account, amount))));
+        bytes32 leaf = keccak256(
+            bytes.concat(keccak256(abi.encode(account, rank, amount)))
+        );
 
         if (!MerkleProof.verify(proof, tournament.merkleRoot, leaf)) {
             revert Errors.InvalidMerkleProof();
@@ -257,7 +283,7 @@ contract OptionMarket is
 
         totalValueLocked[currency] -= amount;
         ///@dev tag as claimed to avoid reentrant claims
-        BitMaps.setTo(tournament.claimList, accountId, true);
+        BitMaps.setTo(tournament.claimList, rank, true);
         ///@dev transfer fund to claimant
         currency.transfer(account, amount);
 
@@ -271,7 +297,9 @@ contract OptionMarket is
         if (
             params.prizePool == 0 ||
             params.winners == 0 ||
-            params.closingTime < params.startTime
+            params.closingTime < params.startTime ||
+            params.lot < DEFAULT_LOT_AMOUNT ||
+            params.lot > MAX_LOT_AMOUNT
         ) revert Errors.InvalidTournament();
 
         uint256 tournamentId = tournamentIds;
@@ -282,7 +310,7 @@ contract OptionMarket is
         config.winners = params.winners;
         config.startTime = params.startTime;
         config.closingTime = params.closingTime;
-        config.maxRefill = params.maxRefillCount;
+        config.lot = params.lot;
         config.prizePool = params.prizePool;
         config.entryFee = params.entryFee;
 
@@ -308,7 +336,7 @@ contract OptionMarket is
             params.winners,
             params.startTime,
             params.closingTime,
-            params.maxRefillCount,
+            params.lot,
             params.title
         );
     }
