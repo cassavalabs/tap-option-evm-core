@@ -15,7 +15,7 @@ contract OptionMarketTest is Test {
     bytes32 public immutable ETH_PRICE_FEED_ID = bytes32(uint256(2));
     address public immutable NATIVE_GAS_TOKEN = address(0);
     uint256 public constant ONE_WEI = 0.000000000000000001 ether;
-    uint32 public constant DEFAULT_LOT_AMOUNT = 100;
+    uint24 public constant DEFAULT_LOT_AMOUNT = 100;
 
     MockPyth public pyth;
 
@@ -81,7 +81,7 @@ contract OptionMarketTest is Test {
         uint64 winners,
         uint64 startTime,
         uint64 endTime,
-        uint64 maxRefillCount,
+        uint64 lot,
         string title
     );
 
@@ -127,7 +127,7 @@ contract OptionMarketTest is Test {
             uint48(block.timestamp + duration),
             prizePool,
             0.25 ether,
-            1,
+            DEFAULT_LOT_AMOUNT,
             "Hello Future"
         );
         tournamentId = uint64(market.tournamentIds());
@@ -150,7 +150,7 @@ contract OptionMarketTest is Test {
             uint48(block.timestamp + duration),
             prizePool,
             2e18,
-            1,
+            DEFAULT_LOT_AMOUNT,
             "Hello Future"
         );
         tournamentId = uint64(market.tournamentIds());
@@ -208,7 +208,7 @@ contract OptionMarketTest is Test {
             // 15,
             65 ether,
             0.25 ether,
-            1,
+            DEFAULT_LOT_AMOUNT,
             "Hello Future"
         );
 
@@ -222,7 +222,7 @@ contract OptionMarketTest is Test {
             params.winners,
             params.startTime,
             params.closingTime,
-            1,
+            DEFAULT_LOT_AMOUNT,
             params.title
         );
 
@@ -239,7 +239,14 @@ contract OptionMarketTest is Test {
         stone.approve(address(market), MAX_INT);
 
         Market.StartTournamentParam memory params = Market.StartTournamentParam(
-            address(stone), 25, uint48(block.timestamp), uint48(block.timestamp + 30), 21e18, 2e18, 1, "Hello Future"
+            address(stone),
+            25,
+            uint48(block.timestamp),
+            uint48(block.timestamp + 30),
+            21e18,
+            2e18,
+            DEFAULT_LOT_AMOUNT,
+            "Hello Future"
         );
 
         vm.expectEmit();
@@ -252,7 +259,7 @@ contract OptionMarketTest is Test {
             params.winners,
             params.startTime,
             params.closingTime,
-            1,
+            DEFAULT_LOT_AMOUNT,
             params.title
         );
 
@@ -272,7 +279,7 @@ contract OptionMarketTest is Test {
             uint48(block.timestamp + 30),
             65 ether,
             0.25 ether,
-            1,
+            DEFAULT_LOT_AMOUNT,
             "Hello Future"
         );
 
