@@ -16,11 +16,26 @@ dataSources:
       apiVersion: 0.0.7
       language: wasm/assemblyscript
       entities:
-        - Account
-        - Tournament
-        - LeaderBoard
-        - Market
-        - Position
+        - AdjustMarketExpiry
+        - AdjustMarketReward
+        - Bearish
+        - Bullish
+        - Claim
+        - CollectFees
+        - CreateMarket
+        - ExtendTournament
+        - GrantOperatorRole
+        - OwnershipTransferred
+        - Pause
+        - Purge
+        - RecoverToken
+        - Refill
+        - RevokeOperatorRole
+        - Settle
+        - SettleTournament
+        - SignUp
+        - StartTournament
+        - UnPause
       abis:
         - name: OptionMarket
           file: ./abis/OptionMarket.json
@@ -35,14 +50,26 @@ dataSources:
           handler: handleBullish
         - event: Claim(indexed uint256,indexed address,uint256)
           handler: handleClaim
+        - event: CollectFees(indexed address,indexed address,indexed address,uint256)
+          handler: handleCollectFees
         - event: CreateMarket(indexed bytes32,address,uint16,uint32,uint32)
           handler: handleCreateMarket
         - event: ExtendTournament(indexed uint256,uint64)
           handler: handleExtendTournament
+        - event: GrantOperatorRole(indexed address)
+          handler: handleGrantOperatorRole
+        - event: OwnershipTransferred(indexed address,indexed address)
+          handler: handleOwnershipTransferred
         - event: Pause(indexed bytes32)
           handler: handlePause
+        - event: Purge(indexed bytes32,indexed uint256,indexed address,bytes32)
+          handler: handlePurge
+        - event: RecoverToken(indexed address,indexed address,uint256)
+          handler: handleRecoverToken
         - event: Refill(indexed uint256,indexed address)
           handler: handleRefill
+        - event: RevokeOperatorRole(indexed address)
+          handler: handleRevokeOperatorRole
         - event: Settle(indexed bytes32,indexed uint256,indexed address,bytes32,uint256,int64)
           handler: handleSettle
         - event: SettleTournament(indexed uint256,indexed address,bytes32)
