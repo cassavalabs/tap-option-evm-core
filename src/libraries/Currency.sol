@@ -92,12 +92,7 @@ library Currency {
      * @param to receipient address
      * @param amount value to transfer
      */
-    function safeTransferFrom(
-        address currency,
-        address from,
-        address to,
-        uint256 amount
-    ) internal {
+    function safeTransferFrom(address currency, address from, address to, uint256 amount) internal {
         /// @solidity memory-safe-assembly
         assembly {
             let m := mload(0x40) // Cache the free memory pointer.
@@ -134,10 +129,7 @@ library Currency {
      * @param currency address of token
      * @param account the address to check balance for
      */
-    function balanceOf(
-        address currency,
-        address account
-    ) internal view returns (uint256) {
+    function balanceOf(address currency, address account) internal view returns (uint256) {
         if (currency.isNative()) {
             return account.balance;
         } else {

@@ -11,12 +11,7 @@ interface IProtocolFees {
      * @param token The token address
      * @param amount Amount collected
      */
-    event CollectFees(
-        address indexed collector,
-        address indexed recipient,
-        address indexed token,
-        uint256 amount
-    );
+    event CollectFees(address indexed collector, address indexed recipient, address indexed token, uint256 amount);
 
     /**
      * @dev Allows protocol managers to collect accrued fee in `token`
@@ -25,11 +20,7 @@ interface IProtocolFees {
      * @param recipient address to forward fund to
      * @param amount amount
      */
-    function collectFees(
-        address token,
-        address recipient,
-        uint256 amount
-    ) external returns (uint256 amountCollected);
+    function collectFees(address token, address recipient, uint256 amount) external returns (uint256 amountCollected);
 
     /**
      * @notice A function to get accumulated protocol fee

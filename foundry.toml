@@ -15,7 +15,7 @@ seed = "0x4444"
 [profile.pr.fuzz]
 runs = 10000
 
-[profile.ci.fuzz]
+[profile.ci]
 runs = 100000
 
 [profile.debug]

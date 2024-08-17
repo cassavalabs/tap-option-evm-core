@@ -85,23 +85,13 @@ contract OptionMarketTest is Test {
         string title
     );
 
-    event SettleTournament(
-        uint256 indexed tournamentId,
-        address indexed operator,
-        bytes32 merkleRoot
-    );
+    event SettleTournament(uint256 indexed tournamentId, address indexed operator, bytes32 merkleRoot);
 
     event ExtendTournament(uint256 indexed tournamentId, uint64 endTime);
 
     event AdjustMarketReward(MarketId indexed id, uint16 reward);
 
-    event CreateMarket(
-        MarketId indexed id,
-        address creator,
-        uint16 reward,
-        uint32 minInterval,
-        uint32 maxInterval
-    );
+    event CreateMarket(MarketId indexed id, address creator, uint16 reward, uint32 minInterval, uint32 maxInterval);
 
     event AdjustMarketExpiry(MarketId indexed id, uint32 minExpiry, uint32 maxExpiry);
 
@@ -109,11 +99,7 @@ contract OptionMarketTest is Test {
 
     event UnPause(MarketId indexed id);
 
-    event RecoverToken(
-        address indexed currency,
-        address indexed recipient,
-        uint256 amount
-    );
+    event RecoverToken(address indexed currency, address indexed recipient, uint256 amount);
 
     error NotOwner();
     error NotOperator();
@@ -128,12 +114,10 @@ contract OptionMarketTest is Test {
         vm.stopPrank();
     }
 
-    function execute_startTournament_native(
-        uint24 winners,
-        uint32 startTime,
-        uint32 duration,
-        uint256 prizePool
-    ) public returns (uint64 tournamentId) {
+    function execute_startTournament_native(uint24 winners, uint32 startTime, uint32 duration, uint256 prizePool)
+        public
+        returns (uint64 tournamentId)
+    {
         vm.deal(sponsor1, prizePool);
 
         Market.StartTournamentParam memory params = Market.StartTournamentParam(
@@ -150,12 +134,10 @@ contract OptionMarketTest is Test {
         market.startTournament{value: prizePool}(params);
     }
 
-    function execute_startTournament_erc20(
-        uint24 winners,
-        uint32 startTime,
-        uint32 duration,
-        uint256 prizePool
-    ) public returns (uint64 tournamentId) {
+    function execute_startTournament_erc20(uint24 winners, uint32 startTime, uint32 duration, uint256 prizePool)
+        public
+        returns (uint64 tournamentId)
+    {
         vm.startPrank(sponsor1);
 
         stone.mint(sponsor1, prizePool);
@@ -177,33 +159,15 @@ contract OptionMarketTest is Test {
         vm.stopPrank();
     }
 
-    function createBTCpriceUpdate(
-        int64 price,
-        uint64 publishTime
-    ) public view returns (bytes memory priceUpdate) {
+    function createBTCpriceUpdate(int64 price, uint64 publishTime) public view returns (bytes memory priceUpdate) {
         priceUpdate = pyth.createPriceFeedUpdateData(
-            BTC_PRICE_FEED_ID,
-            price,
-            10 * 100000000,
-            -8,
-            price,
-            10 * 100000000,
-            publishTime
+            BTC_PRICE_FEED_ID, price, 10 * 100000000, -8, price, 10 * 100000000, publishTime
         );
     }
 
-    function createETHpriceUpdate(
-        int64 price,
-        uint64 publishTime
-    ) public view returns (bytes memory priceUpdate) {
+    function createETHpriceUpdate(int64 price, uint64 publishTime) public view returns (bytes memory priceUpdate) {
         priceUpdate = pyth.createPriceFeedUpdateData(
-            ETH_PRICE_FEED_ID,
-            price,
-            10 * 100000000,
-            -8,
-            price,
-            10 * 100000000,
-            publishTime
+            ETH_PRICE_FEED_ID, price, 10 * 100000000, -8, price, 10 * 100000000, publishTime
         );
     }
 
@@ -275,14 +239,7 @@ contract OptionMarketTest is Test {
         stone.approve(address(market), MAX_INT);
 
         Market.StartTournamentParam memory params = Market.StartTournamentParam(
-            address(stone),
-            25,
-            uint48(block.timestamp),
-            uint48(block.timestamp + 30),
-            21e18,
-            2e18,
-            1,
-            "Hello Future"
+            address(stone), 25, uint48(block.timestamp), uint48(block.timestamp + 30), 21e18, 2e18, 1, "Hello Future"
         );
 
         vm.expectEmit();
@@ -304,9 +261,7 @@ contract OptionMarketTest is Test {
         vm.stopPrank();
     }
 
-    function test_startTournament_with_native_asset_revertsIfNotEnoughFundProvided()
-        public
-    {
+    function test_startTournament_with_native_asset_revertsIfNotEnoughFundProvided() public {
         vm.startPrank(user1);
         vm.deal(user1, 7 ether);
 
@@ -449,22 +404,8 @@ contract OptionMarketTest is Test {
         bytes memory priceUpdate = createBTCpriceUpdate(64e8, 80);
 
         vm.expectEmit();
-        emit Bearish(
-            btcMarketId,
-            tournamentId,
-            user1,
-            positionId,
-            block.timestamp + 60,
-            25,
-            64e8
-        );
-        market.bearish{value: 0.0000001 ether}(
-            btcMarketId,
-            tournamentId,
-            25,
-            60,
-            priceUpdate
-        );
+        emit Bearish(btcMarketId, tournamentId, user1, positionId, block.timestamp + 60, 25, 64e8);
+        market.bearish{value: 0.0000001 ether}(btcMarketId, tournamentId, 25, 60, priceUpdate);
         vm.stopPrank();
     }
 
@@ -482,22 +423,8 @@ contract OptionMarketTest is Test {
         bytes memory priceUpdate = createBTCpriceUpdate(64e8, 80);
 
         vm.expectEmit();
-        emit Bullish(
-            btcMarketId,
-            tournamentId,
-            user1,
-            positionId,
-            block.timestamp + 60,
-            25,
-            64e8
-        );
-        market.bullish{value: 0.0000001 ether}(
-            btcMarketId,
-            tournamentId,
-            25,
-            60,
-            priceUpdate
-        );
+        emit Bullish(btcMarketId, tournamentId, user1, positionId, block.timestamp + 60, 25, 64e8);
+        market.bullish{value: 0.0000001 ether}(btcMarketId, tournamentId, 25, 60, priceUpdate);
         vm.stopPrank();
     }
 
@@ -511,13 +438,7 @@ contract OptionMarketTest is Test {
         bytes memory priceUpdate = createBTCpriceUpdate(64e8, 80);
 
         vm.expectRevert(Errors.MarketDoesNotExist.selector);
-        market.bearish{value: 0.0000001 ether}(
-            btcMarketId,
-            tournamentId,
-            25,
-            60,
-            priceUpdate
-        );
+        market.bearish{value: 0.0000001 ether}(btcMarketId, tournamentId, 25, 60, priceUpdate);
         vm.stopPrank();
     }
 
@@ -533,13 +454,7 @@ contract OptionMarketTest is Test {
         bytes memory priceUpdate = createBTCpriceUpdate(64e8, 80);
 
         vm.expectRevert(Errors.EntryNotAllowed.selector);
-        market.bearish{value: 0.0000001 ether}(
-            btcMarketId,
-            tournamentId,
-            25,
-            60,
-            priceUpdate
-        );
+        market.bearish{value: 0.0000001 ether}(btcMarketId, tournamentId, 25, 60, priceUpdate);
         vm.stopPrank();
     }
 
@@ -557,13 +472,7 @@ contract OptionMarketTest is Test {
         bytes memory priceUpdate = createBTCpriceUpdate(64e8, 80);
 
         vm.expectRevert(Errors.EntryNotAllowed.selector);
-        market.bearish{value: 0.0000001 ether}(
-            btcMarketId,
-            tournamentId,
-            25,
-            60,
-            priceUpdate
-        );
+        market.bearish{value: 0.0000001 ether}(btcMarketId, tournamentId, 25, 60, priceUpdate);
         vm.stopPrank();
     }
 
@@ -580,23 +489,11 @@ contract OptionMarketTest is Test {
         market.signup{value: 0.25 ether}(tournamentId);
 
         bytes memory priceUpdate = createBTCpriceUpdate(64e8, 80);
-        market.bearish{value: 0.0000001 ether}(
-            btcMarketId,
-            tournamentId,
-            DEFAULT_LOT_AMOUNT,
-            60,
-            priceUpdate
-        );
+        market.bearish{value: 0.0000001 ether}(btcMarketId, tournamentId, DEFAULT_LOT_AMOUNT, 60, priceUpdate);
 
         bytes memory priceUpdate2 = createBTCpriceUpdate(3e8, 80);
         vm.expectRevert(Errors.InsufficientBalance.selector);
-        market.bearish{value: 0.0000001 ether}(
-            ethMarketId,
-            tournamentId,
-            25,
-            60,
-            priceUpdate2
-        );
+        market.bearish{value: 0.0000001 ether}(ethMarketId, tournamentId, 25, 60, priceUpdate2);
         vm.stopPrank();
     }
 
@@ -612,13 +509,7 @@ contract OptionMarketTest is Test {
         bytes memory priceUpdate = createBTCpriceUpdate(64e8, 80);
 
         vm.expectRevert(Errors.InvalidExpiryInterval.selector);
-        market.bearish{value: 0.0000001 ether}(
-            btcMarketId,
-            tournamentId,
-            25,
-            6,
-            priceUpdate
-        );
+        market.bearish{value: 0.0000001 ether}(btcMarketId, tournamentId, 25, 6, priceUpdate);
         vm.stopPrank();
     }
 
@@ -633,22 +524,10 @@ contract OptionMarketTest is Test {
         market.signup{value: 0.25 ether}(tournamentId);
 
         bytes memory priceUpdate = createBTCpriceUpdate(64e8, 80);
-        market.bearish{value: 0.0000001 ether}(
-            btcMarketId,
-            tournamentId,
-            DEFAULT_LOT_AMOUNT,
-            60,
-            priceUpdate
-        );
+        market.bearish{value: 0.0000001 ether}(btcMarketId, tournamentId, DEFAULT_LOT_AMOUNT, 60, priceUpdate);
 
         vm.expectRevert(Errors.InsufficientBalance.selector);
-        market.bearish{value: 0.0000001 ether}(
-            btcMarketId,
-            tournamentId,
-            25,
-            60,
-            priceUpdate
-        );
+        market.bearish{value: 0.0000001 ether}(btcMarketId, tournamentId, 25, 60, priceUpdate);
         vm.stopPrank();
     }
 
@@ -663,27 +542,15 @@ contract OptionMarketTest is Test {
         market.signup{value: 0.25 ether}(tournamentId);
 
         bytes memory priceUpdate = createBTCpriceUpdate(64e8, 80);
-        market.bullish{value: 0.0000001 ether}(
-            btcMarketId,
-            tournamentId,
-            DEFAULT_LOT_AMOUNT,
-            60,
-            priceUpdate
-        );
+        market.bullish{value: 0.0000001 ether}(btcMarketId, tournamentId, DEFAULT_LOT_AMOUNT, 60, priceUpdate);
         bytes32 positionId = keccak256(abi.encodePacked(btcMarketId, uint256(0), user1));
-        uint256 expectedReward = ((DEFAULT_LOT_AMOUNT * 8500) / 10000) +
-            DEFAULT_LOT_AMOUNT;
+        uint256 expectedReward = ((DEFAULT_LOT_AMOUNT * 8500) / 10000) + DEFAULT_LOT_AMOUNT;
 
         vm.warp(block.timestamp + 60);
         bytes memory priceUpdate2 = createBTCpriceUpdate(65e8, uint64(block.timestamp));
         vm.expectEmit();
         emit Settle(btcMarketId, tournamentId, user1, positionId, expectedReward, 65e8);
-        market.settle{value: 0.0000001 ether}(
-            btcMarketId,
-            tournamentId,
-            user1,
-            priceUpdate2
-        );
+        market.settle{value: 0.0000001 ether}(btcMarketId, tournamentId, user1, priceUpdate2);
         vm.stopPrank();
     }
 
@@ -700,12 +567,7 @@ contract OptionMarketTest is Test {
         vm.warp(block.timestamp + 60);
         bytes memory priceUpdate = createBTCpriceUpdate(65e8, uint64(block.timestamp));
         vm.expectRevert(Errors.PositionNotFound.selector);
-        market.settle{value: 0.0000001 ether}(
-            btcMarketId,
-            tournamentId,
-            user1,
-            priceUpdate
-        );
+        market.settle{value: 0.0000001 ether}(btcMarketId, tournamentId, user1, priceUpdate);
 
         vm.stopPrank();
     }
@@ -721,30 +583,14 @@ contract OptionMarketTest is Test {
         market.signup{value: 0.25 ether}(tournamentId);
 
         bytes memory priceUpdate = createBTCpriceUpdate(64e8, 80);
-        market.bullish{value: 0.0000001 ether}(
-            btcMarketId,
-            tournamentId,
-            DEFAULT_LOT_AMOUNT,
-            60,
-            priceUpdate
-        );
+        market.bullish{value: 0.0000001 ether}(btcMarketId, tournamentId, DEFAULT_LOT_AMOUNT, 60, priceUpdate);
 
         vm.warp(block.timestamp + 60);
         bytes memory priceUpdate2 = createBTCpriceUpdate(65e8, uint64(block.timestamp));
-        market.settle{value: 0.0000001 ether}(
-            btcMarketId,
-            tournamentId,
-            user1,
-            priceUpdate2
-        );
+        market.settle{value: 0.0000001 ether}(btcMarketId, tournamentId, user1, priceUpdate2);
 
         vm.expectRevert(Errors.PositionNotFound.selector);
-        market.settle{value: 0.0000001 ether}(
-            btcMarketId,
-            tournamentId,
-            user1,
-            priceUpdate2
-        );
+        market.settle{value: 0.0000001 ether}(btcMarketId, tournamentId, user1, priceUpdate2);
 
         vm.stopPrank();
     }
@@ -760,22 +606,11 @@ contract OptionMarketTest is Test {
         market.signup{value: 0.25 ether}(tournamentId);
 
         bytes memory priceUpdate = createBTCpriceUpdate(64e8, 80);
-        market.bearish{value: 0.0000001 ether}(
-            btcMarketId,
-            tournamentId,
-            DEFAULT_LOT_AMOUNT,
-            60,
-            priceUpdate
-        );
+        market.bearish{value: 0.0000001 ether}(btcMarketId, tournamentId, DEFAULT_LOT_AMOUNT, 60, priceUpdate);
 
         vm.warp(block.timestamp + 60);
         bytes memory priceUpdate2 = createBTCpriceUpdate(65e8, uint64(block.timestamp));
-        market.settle{value: 0.0000001 ether}(
-            btcMarketId,
-            tournamentId,
-            user1,
-            priceUpdate2
-        );
+        market.settle{value: 0.0000001 ether}(btcMarketId, tournamentId, user1, priceUpdate2);
 
         vm.expectEmit();
         emit Refill(tournamentId, user1);
@@ -822,22 +657,11 @@ contract OptionMarketTest is Test {
         market.signup{value: 0.25 ether}(tournamentId);
 
         bytes memory priceUpdate = createBTCpriceUpdate(64e8, 80);
-        market.bearish{value: 0.0000001 ether}(
-            btcMarketId,
-            tournamentId,
-            DEFAULT_LOT_AMOUNT,
-            60,
-            priceUpdate
-        );
+        market.bearish{value: 0.0000001 ether}(btcMarketId, tournamentId, DEFAULT_LOT_AMOUNT, 60, priceUpdate);
 
         vm.warp(block.timestamp + 60);
         bytes memory priceUpdate2 = createBTCpriceUpdate(65e8, uint64(block.timestamp));
-        market.settle{value: 0.0000001 ether}(
-            btcMarketId,
-            tournamentId,
-            user1,
-            priceUpdate2
-        );
+        market.settle{value: 0.0000001 ether}(btcMarketId, tournamentId, user1, priceUpdate2);
 
         vm.expectRevert(Errors.InsufficientFee.selector);
         market.refill{value: 0.15 ether}(tournamentId);
@@ -858,22 +682,11 @@ contract OptionMarketTest is Test {
         market.signup(tournamentId);
 
         bytes memory priceUpdate = createBTCpriceUpdate(64e8, 80);
-        market.bearish{value: 0.0000001 ether}(
-            btcMarketId,
-            tournamentId,
-            DEFAULT_LOT_AMOUNT,
-            60,
-            priceUpdate
-        );
+        market.bearish{value: 0.0000001 ether}(btcMarketId, tournamentId, DEFAULT_LOT_AMOUNT, 60, priceUpdate);
 
         vm.warp(block.timestamp + 60);
         bytes memory priceUpdate2 = createBTCpriceUpdate(65e8, uint64(block.timestamp));
-        market.settle{value: 0.0000001 ether}(
-            btcMarketId,
-            tournamentId,
-            user1,
-            priceUpdate2
-        );
+        market.settle{value: 0.0000001 ether}(btcMarketId, tournamentId, user1, priceUpdate2);
 
         vm.expectEmit();
         emit Refill(tournamentId, user1);
