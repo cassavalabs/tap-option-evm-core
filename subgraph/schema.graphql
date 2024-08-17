@@ -30,12 +30,14 @@ type Tournament @entity {
   startTime: BigInt!
   # unix timestamp when tournament will end
   closingTime: BigInt!
-  # the max number of times a user can refill their balance
-  maxRebuyCount: BigInt!
+  # the USD balance users get credited on signup and rebuy
+  lot: BigInt!
   # the block this tournament was registered
   blockNumber: BigInt!
   # the unix timestamp tournament was created
   createdAt: BigInt!
+  # True if the tournament reward is claimable
+  isFinalized: Boolean!
   # the winners claim list merkle root
   merkleRoot: String!
   # the title of the tournament
@@ -103,9 +105,9 @@ type Position @entity {
   # the closing price of underlying asset
   closingPrice: BigInt!
   # true if user has excercised the option at expiry
-  isRewardClaimed: Boolean!
-  # amount of reward claimed
-  rewardAmountClaimed: BigDecimal!
+  isExcersized: Boolean!
+  # amount of profit
+  profit: BigDecimal!
   # unix timestamp when position was created
   createdAt: BigInt!
   # the option expiry time

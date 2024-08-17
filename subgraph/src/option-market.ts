@@ -8,6 +8,7 @@ import {
   CreateMarket as CreateMarketEvent,
   ExtendTournament as ExtendTournamentEvent,
   Pause as PauseEvent,
+  Purge as PurgeEvent,
   Refill as RefillEvent,
   Settle as SettleEvent,
   SettleTournament as SettleTournamentEvent,
@@ -53,10 +54,10 @@ export function handleBearish(event: BearishEvent): void {
     position.createdAt = event.block.timestamp;
     position.expiryTime = event.params.expiry;
     position.investment = event.params.stake.toBigDecimal();
-    position.isRewardClaimed = false;
+    position.isExcersized = false;
     position.market = event.params.id.toHexString();
     position.option = "LOW";
-    position.rewardAmountClaimed = ZERO_BD;
+    position.profit = ZERO_BD;
     position.strikePrice = event.params.price;
     position.tournament = event.params.tournamentId.toHexString();
 
@@ -85,10 +86,10 @@ export function handleBullish(event: BullishEvent): void {
     position.createdAt = event.block.timestamp;
     position.expiryTime = event.params.expiry;
     position.investment = event.params.stake.toBigDecimal();
-    position.isRewardClaimed = false;
+    position.isExcersized = false;
     position.market = event.params.id.toHexString();
     position.option = "HIGH";
-    position.rewardAmountClaimed = ZERO_BD;
+    position.profit = ZERO_BD;
     position.strikePrice = event.params.price;
     position.tournament = event.params.tournamentId.toHexString();
 
@@ -150,6 +151,15 @@ export function handlePause(event: PauseEvent): void {
   }
 }
 
+export function handlePurge(event: PurgeEvent): void {
+  let position = Position.load(event.params.positionId.toHexString());
+
+  if (position) {
+    position.isExcersized = true;
+    position.save();
+  }
+}
+
 export function handleRefill(event: RefillEvent): void {
   let leaderboardId = event.params.tournamentId.toHexString().concat(event.params.account.toHexString());
   let leaderboard = LeaderBoard.load(leaderboardId);
@@ -167,8 +177,8 @@ export function handleSettle(event: SettleEvent): void {
 
   if (position) {
     position.closingPrice = event.params.closingPrice;
-    position.isRewardClaimed = true;
-    position.rewardAmountClaimed = event.params.reward.toBigDecimal();
+    position.isExcersized = true;
+    position.profit = event.params.reward.toBigDecimal();
 
     position.save();
   }
@@ -239,7 +249,7 @@ export function handleStartTournament(event: StartTournamentEvent): void {
     tournament.entrants = ZERO_BI;
     tournament.entryFee = event.params.entryFee.toBigDecimal();
     tournament.initiator = event.params.initiator.toHexString();
-    tournament.maxRebuyCount = event.params.maxRefillCount;
+    tournament.lot = event.params.lot;
     tournament.merkleRoot = "";
     tournament.prizePool = event.params.prizePool.toBigDecimal();
     tournament.rebuyCount = ZERO_BI;
