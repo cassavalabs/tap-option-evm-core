@@ -200,6 +200,8 @@ export function handleSettleTournament(event: SettleTournamentEvent): void {
 
   if (tournament) {
     tournament.merkleRoot = event.params.merkleRoot.toHexString();
+    tournament.isFinalized = true;
+    
     tournament.save();
   }
 }
@@ -222,11 +224,11 @@ export function handleSignUp(event: SignUpEvent): void {
     account.save();
   }
 
-  if (!leaderboard) {
+  if (!leaderboard && tournament) {
     leaderboard = new LeaderBoard(leaderboardId);
     leaderboard.account = event.params.account.toHexString();
     leaderboard.createdAt = event.block.timestamp;
-    leaderboard.balance = LOT_AMOUNT_BD;
+    leaderboard.balance = tournament.lot.toBigDecimal();
     leaderboard.openPositions = ZERO_BI;
     leaderboard.rebuyCount = ZERO_BI;
     leaderboard.rewardAmountClaimed = ZERO_BD;
@@ -250,6 +252,7 @@ export function handleStartTournament(event: StartTournamentEvent): void {
     tournament.entryFee = event.params.entryFee.toBigDecimal();
     tournament.initiator = event.params.initiator.toHexString();
     tournament.lot = event.params.lot;
+    tournament.isFinalized = false;
     tournament.merkleRoot = "";
     tournament.prizePool = event.params.prizePool.toBigDecimal();
     tournament.rebuyCount = ZERO_BI;
