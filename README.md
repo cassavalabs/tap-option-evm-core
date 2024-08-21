@@ -16,6 +16,9 @@ Blast off your DeFi journey with Tap option!!!
 For some reasons we are facing challenge with getting our project to work seamlessly with Hedera.
 The contracts are deployed at the following addresses and networks for tests
 
+- [Live Demo](https://tap-option-interface-mhwngpigc-emmanuels-projects-dcb17533.vercel.app/)
+- [Short Video Demo](https://vimeo.com/1000954127)
+
 ## Hedera Testnet
 
 - Market address: 0x09e78954b034f3eb9c188a430e22f1a5bbc7a67c
@@ -27,5 +30,3 @@ The contracts are deployed at the following addresses and networks for tests
 - Market address: 0x442a6bd228adf9e8c8f9632e1a5479e512066d3c
 - Tap token: 0x9ccca59755417727d19ee493fad184f26fb31278
 - [verified contract on bscscan](https://testnet.bscscan.com/address/0x442a6bd228adf9e8c8f9632e1a5479e512066d3c)
-
-
