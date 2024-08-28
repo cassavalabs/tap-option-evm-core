@@ -1,6 +1,6 @@
 # Tap option
 
-A gamified point-based option trading platform
+A gamified tap-2-earn options trading platform
 
 [![Lint](https://github.com/cassavalabs/tap-option-evm-core/actions/workflows/lint.yml/badge.svg)](https://github.com/cassavalabs/tap-option-evm-core/actions/workflows/lint.yml)
 [![Tests](https://github.com/cassavalabs/tap-option-evm-core/actions/workflows/test.yml/badge.svg)](https://github.com/cassavalabs/tap-option-evm-core/actions/workflows/test.yml)
@@ -16,8 +16,10 @@ Blast off your DeFi journey with Tap option!!!
 For some reasons we are facing challenge with getting our project to work seamlessly with Hedera.
 The contracts are deployed at the following addresses and networks for tests
 
-- [Live Demo](https://tap-option-interface-mhwngpigc-emmanuels-projects-dcb17533.vercel.app/)
+- [Live Demo](https://tap-option.vercel.app/)
+- [Short Video Demo BNB](https://youtu.be/9-1RHsMmOJw)
 - [Short Video Demo](https://vimeo.com/1000954127)
+- [Frontend source code](https://github.com/cassavalabs/tap-option-interface/tree/optimize-interface)
 
 ## Hedera Testnet
 
